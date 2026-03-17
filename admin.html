@@ -506,7 +506,8 @@ async function testBackend() {
   if (!url) { res.textContent = "No backend URL entered."; return; }
   res.textContent = "Pinging…";
   try {
-    const r = await fetch(url);
+    // GAS GET works cross-origin; POST triggers a redirect fetch() can't follow
+    const r = await fetch(url, { redirect: "follow" });
     const d = await r.json();
     if (d.status === "ok") {
       res.style.color = "#16a34a";

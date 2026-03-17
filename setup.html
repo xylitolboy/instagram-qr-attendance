@@ -471,6 +471,19 @@ function updateProgress(active) {
   }
 }
 
+// ── GAS fetch helper ─────────────────────────────────────────────────────────
+// GAS GET requests work cross-origin fine (returns JSON directly).
+// GAS POST requests redirect to googleusercontent.com — fetch() can't follow
+// cross-origin redirects, so we use GET with ?action= for all read operations.
+async function gasGet(url, params) {
+  const u = new URL(url);
+  Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
+  const res = await fetch(u.toString(), { redirect: "follow" });
+  // GAS may return a redirect to googleusercontent — follow it
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
 // ── STEP 2: Test connection ───────────────────────────────────────────────────
 async function testConnection() {
   const url = document.getElementById("webAppUrl").value.trim();
@@ -481,8 +494,8 @@ async function testConnection() {
   document.getElementById("testBtn").disabled = true;
 
   try {
-    const r = await fetch(url);
-    const d = await r.json();
+    // Use GET — works cross-origin without CORS issues
+    const d = await gasGet(url);
     if (d.status === "ok") {
       statusEl.innerHTML = '<span class="status-badge ok">✓ Connected — backend is running</span>';
       state.webAppUrl = url;
@@ -493,7 +506,7 @@ async function testConnection() {
       statusEl.innerHTML = '<span class="status-badge err">✗ ' + (d.message || "Unexpected response") + '</span>';
     }
   } catch (e) {
-    statusEl.innerHTML = '<span class="status-badge err">✗ Connection failed — check URL and access settings</span>';
+    statusEl.innerHTML = '<span class="status-badge err">✗ Connection failed — check URL and "Anyone" access setting</span>';
   }
   document.getElementById("testBtn").disabled = false;
 }
@@ -504,14 +517,8 @@ async function loadSheets() {
   statusEl.innerHTML = '<span class="spin"></span> Reading your sheet structure…';
 
   try {
-    const res = await fetch(state.webAppUrl, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "inspect" }),
-    });
-
-    // GAS redirects POST to a googleusercontent.com echo URL
-    // The fetch follows it automatically in a browser
-    const data = await res.json();
+    // Use GET ?action=inspect — avoids the POST redirect CORS issue
+    const data = await gasGet(state.webAppUrl, { action: "inspect" });
 
     if (!data.sheets || !data.sheets.length) {
       statusEl.innerHTML = '<span class="status-badge err">✗ Could not read sheets. Check SPREADSHEET_ID in Code.gs.</span>';
@@ -523,7 +530,7 @@ async function loadSheets() {
     renderSheetLists();
 
   } catch (e) {
-    statusEl.innerHTML = '<span class="status-badge err">✗ ' + e.message + '</span>';
+    statusEl.innerHTML = '<span class="status-badge err">✗ ' + e.message + ' — check SPREADSHEET_ID and deployment access</span>';
   }
 }
 
