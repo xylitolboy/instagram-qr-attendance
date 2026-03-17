@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lexend:wght@400;700;800&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -480,14 +480,18 @@ function generateQR() {
 
   const dlFilename = "qr_"+(num?"session"+num:date)+".png";
 
-  if (typeof QRCode !== "undefined") {
-    QRCode.toCanvas(canvas, url, {
-      width: size, margin: 2,
-      color: { dark: "#F9F9F9", light: "#1C1C1C" }  // inverted: white modules on dark bg
-    }, err => {
-      if (err) { console.error("QRCode.toCanvas:", err); fallbackQR(url, canvas, size, dlFilename); return; }
-      bindDownload(canvas, dlFilename);
+  if (typeof QRious !== "undefined") {
+    // qrious is synchronous — draws immediately, no callback needed
+    new QRious({
+      element:     canvas,
+      value:       url,
+      size:        size,
+      foreground:  "#F9F9F9",  // white modules on dark background
+      background:  "#1C1C1C",
+      padding:     12,
+      level:       "H",        // high error correction
     });
+    bindDownload(canvas, dlFilename);
   } else { fallbackQR(url, canvas, size, dlFilename); }
 
   document.getElementById("qrLabel").textContent = num ? (event||"SESSION")+" #"+num : (event||date);
