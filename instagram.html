@@ -1,255 +1,451 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Instagram Check-in</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <title>WAUSAN30 — Check In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lexend:wght@400;700;800&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --purple: #833AB4;
-      --pink:   #E1306C;
-      --orange: #F77737;
-      --r: 14px;
+      --black:  #1C1C1C;
+      --red:    #CC0000;
+      --gold:   #CAB895;
+      --white:  #F9F9F9;
+      --gray:   #3a3a3a;
+      --muted:  rgba(249,249,249,0.45);
+      --border: rgba(249,249,249,0.12);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Lexend', 'Noto Sans KR', sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
 
     body {
       min-height: 100dvh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #f5f0ff 0%, #fff0f5 50%, #fff5ee 100%);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 24px 16px;
+      padding: 24px 20px 40px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(204,0,0,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(202,184,149,0.05) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* Gold top bar */
+    .top-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gold);
+      z-index: 100;
     }
 
     .card {
-      background: #fff;
-      border-radius: 24px;
-      padding: 40px 28px 36px;
       width: 100%;
       max-width: 400px;
-      box-shadow: 0 8px 40px rgba(131,58,180,.12);
+      position: relative;
+      z-index: 1;
     }
 
-    /* Logo */
-    .logo { display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
-    .logo svg { width: 48px; height: 48px; }
-
-    /* Event name */
-    .event-name {
-      text-align: center;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--purple);
-      background: rgba(131,58,180,.07);
-      border-radius: 20px;
-      padding: 4px 14px;
-      display: none;
-      margin: 0 auto 10px;
-      width: fit-content;
+    /* Logo + brand */
+    .brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 32px;
     }
 
-    h1 { text-align: center; font-size: 1.3rem; font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
 
+    .brand-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+    }
+
+    /* Session badge */
     .session-badge {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .session-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    .session-badge .text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+    }
+
+    /* Heading */
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2rem, 8vw, 2.6rem);
+      letter-spacing: 0.08em;
+      color: var(--white);
       text-align: center;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-family: 'Noto Sans KR', sans-serif;
       font-size: 0.78rem;
-      font-weight: 600;
-      color: #888;
-      margin-bottom: 28px;
-      min-height: 18px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 32px;
+      letter-spacing: 0.02em;
     }
 
     /* Input */
-    .input-wrap { position: relative; margin-bottom: 10px; }
-    .at { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.05rem; font-weight: 600; color: var(--purple); pointer-events: none; }
+    .input-wrap {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .at-prefix {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      color: var(--red);
+      pointer-events: none;
+      letter-spacing: 0;
+    }
+
     input[type="text"] {
       width: 100%;
-      padding: 15px 15px 15px 30px;
+      padding: 16px 16px 16px 34px;
+      font-family: 'Lexend', sans-serif;
       font-size: 1rem;
-      border: 2px solid #e8e0f0;
-      border-radius: var(--r);
+      color: var(--white);
+      background: rgba(249,249,249,0.06);
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
       outline: none;
-      color: #1a1a1a;
-      background: #fafafa;
-      transition: border-color .2s, box-shadow .2s;
+      transition: border-color 0.2s, background 0.2s;
       -webkit-appearance: none;
+      caret-color: var(--red);
     }
-    input:focus { border-color: var(--purple); background: #fff; box-shadow: 0 0 0 4px rgba(131,58,180,.08); }
-    input.err   { border-color: var(--pink);   box-shadow: 0 0 0 4px rgba(225,48,108,.08); }
+    input::placeholder { color: rgba(249,249,249,0.25); }
+    input:focus {
+      border-color: var(--red);
+      background: rgba(249,249,249,0.09);
+    }
+    input.err { border-color: var(--red); }
 
-    .errmsg { font-size: .8rem; color: var(--pink); min-height: 20px; padding-left: 4px; margin-bottom: 14px; }
+    .errmsg {
+      font-size: 0.75rem;
+      color: var(--red);
+      min-height: 18px;
+      padding-left: 4px;
+      margin-bottom: 14px;
+      font-family: 'Lexend', sans-serif;
+    }
 
     /* Button */
     button {
-      width: 100%; padding: 15px;
-      font-size: 1rem; font-weight: 700; color: #fff;
-      background: linear-gradient(90deg, var(--purple), var(--pink), var(--orange));
-      background-size: 200% auto;
-      border: none; border-radius: var(--r); cursor: pointer;
-      transition: opacity .2s, transform .15s;
+      width: 100%;
+      padding: 16px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 0.12em;
+      color: var(--white);
+      background: var(--red);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, opacity 0.2s;
       -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
     }
-    button:active:not(:disabled) { transform: scale(.97); }
-    button:disabled { opacity: .5; cursor: not-allowed; }
+    button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.15s;
+    }
+    button:active:not(:disabled)::after { background: rgba(255,255,255,0.1); }
+    button:active:not(:disabled) { transform: scale(0.98); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .btn-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .spinner { display: none; width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 28px 0;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .divider span {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
     /* Success */
-    .success { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 8px 0; animation: up .4s ease; }
-    @keyframes up { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .success {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+      padding: 8px 0;
+      animation: fadeUp 0.4s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
-    .check { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg,var(--purple),var(--pink)); display: flex; align-items: center; justify-content: center; }
-    .check svg { width: 30px; height: 30px; stroke: #fff; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .check-mark {
+      width: 64px; height: 64px;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .check-mark svg {
+      width: 28px; height: 28px;
+      stroke: var(--gold);
+      stroke-width: 2.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
 
-    .success h2 { font-size: 1.2rem; font-weight: 800; color: #1a1a1a; }
-    .success .handle { font-size: 1rem; font-weight: 600; color: var(--purple); }
-    .success .note { font-size: .82rem; color: #aaa; text-align: center; line-height: 1.5; }
+    .success-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.1em;
+      color: var(--white);
+    }
+    .success-handle {
+      font-family: 'Lexend', sans-serif;
+      font-size: 0.95rem;
+      color: var(--gold);
+      font-weight: 600;
+    }
+    .success-note {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* Footer */
+    .footer-brand {
+      margin-top: 40px;
+      text-align: center;
+    }
+    .footer-brand span {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      color: rgba(249,249,249,0.15);
+    }
   </style>
 </head>
 <body>
-<div class="card">
+  <div class="top-bar"></div>
 
-  <div class="logo">
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="ig" x1="0" y1="48" x2="48" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stop-color="#F77737"/>
-          <stop offset="40%"  stop-color="#E1306C"/>
-          <stop offset="100%" stop-color="#833AB4"/>
-        </linearGradient>
-      </defs>
-      <rect x="2" y="2" width="44" height="44" rx="12" stroke="url(#ig)" stroke-width="3.5"/>
-      <circle cx="24" cy="24" r="9" stroke="url(#ig)" stroke-width="3.5"/>
-      <circle cx="35.5" cy="12.5" r="2.5" fill="url(#ig)"/>
-    </svg>
-  </div>
-
-  <div class="event-name" id="eventName"></div>
-  <h1>Enter your Instagram ID</h1>
-  <div class="session-badge" id="sessionBadge"></div>
-
-  <!-- Form -->
-  <div id="formSection">
-    <div class="input-wrap">
-      <span class="at">@</span>
-      <input type="text" id="igInput"
-        placeholder="your_username"
-        autocomplete="off" autocorrect="off"
-        autocapitalize="none" spellcheck="false"
-        inputmode="text" maxlength="31" />
+  <div class="card">
+    <!-- Brand -->
+    <div class="brand">
+      <img class="brand-logo"
+        src="https://lh3.googleusercontent.com/sitesv/APaQ0SSU2K5n_N52aehM6RR-dHkyA6Zl6lUqBA30ZXpmCKwsvMGGEyjTUoNtvF5Bks3nPyF4cvdh93hHBXtjhrenM6_ZyWF5XXrHnaSc6oa0fHDvmdvmtTYzGR-WyML2EHcOLqgOCqfrA4jjwxT8Dgh2vJqACTLt0cFLzq_6a-NeQUOzAiOJzibIvT_7rvksz_3Ne2ew5qjtannb0LIH"
+        alt="WAUSAN30"
+        onerror="this.style.display='none'"
+      />
+      <span class="brand-name" id="brandName">WAUSAN30</span>
     </div>
-    <p class="errmsg" id="errMsg"></p>
 
-    <button id="submitBtn" onclick="submit()">
-      <span class="btn-inner">
-        <span class="spinner" id="spinner"></span>
-        <span id="btnLabel">Submit</span>
-      </span>
-    </button>
+    <!-- Session badge -->
+    <div class="session-badge" id="sessionBadge">
+      <span class="dot"></span>
+      <span class="text" id="sessionText"></span>
+    </div>
+
+    <!-- Heading -->
+    <h1>ENTER YOUR<br>INSTAGRAM ID</h1>
+    <p class="subtitle">인스타그램 아이디를 입력해 주세요</p>
+
+    <!-- Form -->
+    <div id="formSection">
+      <div class="input-wrap">
+        <span class="at-prefix">@</span>
+        <input type="text" id="igInput"
+          placeholder="your_username"
+          autocomplete="off" autocorrect="off"
+          autocapitalize="none" spellcheck="false"
+          inputmode="text" maxlength="31"/>
+      </div>
+      <p class="errmsg" id="errMsg"></p>
+
+      <button id="submitBtn" onclick="submit()">
+        <span class="btn-inner">
+          <span class="spinner" id="spinner"></span>
+          <span id="btnLabel">CHECK IN</span>
+        </span>
+      </button>
+    </div>
+
+    <!-- Success -->
+    <div class="success" id="successBox">
+      <div class="check-mark">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="success-title">CHECKED IN</div>
+      <div class="success-handle" id="successHandle"></div>
+      <p class="success-note">
+        인스타그램 아이디가 저장되었습니다.<br>
+        See you on the run!
+      </p>
+    </div>
+
+    <div class="footer-brand">
+      <span>WAUSAN30 · SEOUL RUNNING CREW</span>
+    </div>
   </div>
 
-  <!-- Success -->
-  <div class="success" id="successBox">
-    <div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-    <h2>You're in!</h2>
-    <p class="handle" id="successHandle"></p>
-    <p class="note">Your Instagram ID has been saved.<br>See you at the event!</p>
-  </div>
+  <script>
+    const p            = new URLSearchParams(window.location.search);
+    const BACKEND_URL  = (p.get("backend") || localStorage.getItem("ig_backend") || "").trim();
+    const SESSION_DATE = (p.get("date")    || "").trim();
+    const SESSION_NUM  = (p.get("session") || "").trim();
+    const EVENT_NAME   = (p.get("event")   || localStorage.getItem("ig_event") || "WAUSAN30").trim();
 
-</div>
+    if (p.get("backend")) localStorage.setItem("ig_backend", p.get("backend"));
+    if (p.get("event"))   localStorage.setItem("ig_event",   p.get("event"));
 
-<script>
-  // ── Read URL params ──────────────────────────────────────────────────────────
-  const p           = new URLSearchParams(window.location.search);
-  const BACKEND_URL = (p.get("backend") || localStorage.getItem("ig_backend") || "").trim();
-  const SESSION_DATE = (p.get("date")    || "").trim();
-  const SESSION_NUM  = (p.get("session") || "").trim();
-  const EVENT_NAME   = (p.get("event")   || localStorage.getItem("ig_event") || "").trim();
+    // Brand name
+    if (EVENT_NAME) document.getElementById("brandName").textContent = EVENT_NAME;
 
-  // Persist backend URL if supplied
-  if (p.get("backend")) localStorage.setItem("ig_backend", p.get("backend"));
-  if (p.get("event"))   localStorage.setItem("ig_event",   p.get("event"));
+    // Session badge
+    if (SESSION_DATE) {
+      const badge = document.getElementById("sessionBadge");
+      const text  = SESSION_NUM
+        ? "SESSION #" + SESSION_NUM + "  ·  " + SESSION_DATE
+        : SESSION_DATE;
+      document.getElementById("sessionText").textContent = text;
+      badge.style.display = "flex";
+    }
 
-  // ── UI init ──────────────────────────────────────────────────────────────────
-  if (EVENT_NAME) {
-    const el = document.getElementById("eventName");
-    el.textContent = EVENT_NAME;
-    el.style.display = "block";
-  }
-  if (SESSION_DATE) {
-    document.getElementById("sessionBadge").textContent = SESSION_NUM
-      ? "Session #" + SESSION_NUM + "  ·  " + SESSION_DATE
-      : SESSION_DATE;
-  }
+    if (!BACKEND_URL) {
+      document.getElementById("errMsg").textContent = "No backend configured. Scan the event QR code.";
+      document.getElementById("submitBtn").disabled = true;
+    }
 
-  if (!BACKEND_URL) {
-    document.getElementById("errMsg").textContent =
-      "Configuration error: no backend URL. Please use the admin QR link.";
-    document.getElementById("submitBtn").disabled = true;
-  }
+    const input = document.getElementById("igInput");
+    input.addEventListener("input", () => {
+      if (input.value.startsWith("@")) input.value = input.value.slice(1);
+      setErr(""); input.classList.remove("err");
+    });
+    input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
 
-  // ── Input handlers ───────────────────────────────────────────────────────────
-  const input = document.getElementById("igInput");
-  input.addEventListener("input", () => {
-    if (input.value.startsWith("@")) input.value = input.value.slice(1);
-    setErr(""); input.classList.remove("err");
-  });
-  input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+    function setErr(m) { document.getElementById("errMsg").textContent = m; }
 
-  function setErr(msg) { document.getElementById("errMsg").textContent = msg; }
+    function validate(raw) {
+      const v = raw.replace(/^@+/, "").trim();
+      if (!v)            return { ok: false, msg: "인스타그램 아이디를 입력해 주세요." };
+      if (v.length < 3)  return { ok: false, msg: "Username must be at least 3 characters." };
+      if (v.length > 30) return { ok: false, msg: "Username must be 30 characters or fewer." };
+      if (!/^[a-zA-Z0-9._]+$/.test(v))
+        return { ok: false, msg: "Only letters, numbers, . and _ are allowed." };
+      return { ok: true, value: v };
+    }
 
-  function validate(raw) {
-    const v = raw.replace(/^@+/, "").trim();
-    if (!v)         return { ok: false, msg: "Please enter your Instagram username." };
-    if (v.length < 3)  return { ok: false, msg: "Username must be at least 3 characters." };
-    if (v.length > 30) return { ok: false, msg: "Username must be 30 characters or fewer." };
-    if (!/^[a-zA-Z0-9._]+$/.test(v))
-      return { ok: false, msg: "Only letters, numbers, underscores, and periods allowed." };
-    return { ok: true, value: v };
-  }
+    function setLoading(on) {
+      document.getElementById("submitBtn").disabled    = on;
+      document.getElementById("spinner").style.display = on ? "block" : "none";
+      document.getElementById("btnLabel").textContent  = on ? "SUBMITTING..." : "CHECK IN";
+    }
 
-  function setLoading(on) {
-    document.getElementById("submitBtn").disabled      = on;
-    document.getElementById("spinner").style.display   = on ? "block" : "none";
-    document.getElementById("btnLabel").textContent    = on ? "Submitting…" : "Submit";
-  }
+    async function submit() {
+      if (!BACKEND_URL) return;
+      const r = validate(input.value);
+      if (!r.ok) { setErr(r.msg); input.classList.add("err"); input.focus(); return; }
 
-  async function submit() {
-    if (!BACKEND_URL) return;
-    const r = validate(input.value);
-    if (!r.ok) { setErr(r.msg); input.classList.add("err"); input.focus(); return; }
+      setLoading(true);
+      try {
+        const res  = await fetch(BACKEND_URL, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ instagram: r.value, date: SESSION_DATE, session: SESSION_NUM }),
+        });
+        const data = await res.json();
 
-    setLoading(true);
-    try {
-      const res  = await fetch(BACKEND_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ instagram: r.value, date: SESSION_DATE, session: SESSION_NUM }),
-      });
-      const data = await res.json();
-
-      if (data.status === "success" || data.status === "duplicate") {
-        document.getElementById("formSection").style.display = "none";
-        const box = document.getElementById("successBox");
-        box.style.display = "flex";
-        document.getElementById("successHandle").textContent =
-          data.status === "duplicate" ? "@" + r.value + " (already registered)" : "@" + r.value;
-      } else {
-        setErr(data.message || "Something went wrong. Please try again.");
+        if (data.status === "success" || data.status === "duplicate") {
+          document.getElementById("formSection").style.display = "none";
+          const box = document.getElementById("successBox");
+          box.style.display = "flex";
+          document.getElementById("successHandle").textContent =
+            data.status === "duplicate"
+              ? "@" + r.value + " (already registered)"
+              : "@" + r.value;
+        } else {
+          setErr(data.message || "Something went wrong. Please try again.");
+          setLoading(false);
+        }
+      } catch (err) {
+        setErr("Network error. Check your connection.");
         setLoading(false);
       }
-    } catch (err) {
-      setErr("Network error. Please check your connection.");
-      setLoading(false);
     }
-  }
-</script>
+  </script>
 </body>
 </html>

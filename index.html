@@ -3,289 +3,347 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Instagram QR Attendance — Free & Serverless</title>
+  <meta name="description" content="WAUSAN30 Instagram QR Attendance — Free, serverless check-in system for running crews and events."/>
+  <title>WAUSAN30 — QR Attendance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lexend:wght@400;700;800&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --purple: #833AB4; --pink: #E1306C; --orange: #F77737;
-      --grad: linear-gradient(90deg, var(--purple), var(--pink), var(--orange));
+      --black: #1C1C1C; --red: #CC0000; --gold: #CAB895;
+      --white: #F9F9F9; --muted: rgba(249,249,249,0.5);
+      --border: rgba(249,249,249,0.1);
     }
+    html { background: var(--black); scroll-behavior: smooth; }
     body {
-      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-      color: #1a1a1a; background: #fff; overflow-x: hidden;
+      background: var(--black); color: var(--white);
+      font-family: 'Lexend','Noto Sans KR',sans-serif;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
     }
 
     /* ── NAV ── */
+    .top-bar { height: 3px; background: var(--gold); }
     nav {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 32px; border-bottom: 1px solid #f0e8ff;
-      position: sticky; top: 0; background: rgba(255,255,255,.95);
-      backdrop-filter: blur(12px); z-index: 100;
+      padding: 16px 24px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 3px; z-index: 100;
+      background: rgba(28,28,28,0.95); backdrop-filter: blur(12px);
     }
-    .nav-logo {
-      font-size: 1.1rem; font-weight: 800;
-      background: var(--grad); -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .nav-links { display: flex; gap: 24px; align-items: center; }
-    .nav-links a { font-size: .88rem; color: #666; text-decoration: none; font-weight: 500; transition: color .2s; }
-    .nav-links a:hover { color: var(--purple); }
+    .nav-logo { font-family: 'Bebas Neue',sans-serif; font-size: 1.3rem; letter-spacing: 0.15em; color: var(--white); text-decoration: none; }
+    .nav-logo span { color: var(--red); }
+    .nav-links { display: flex; gap: 20px; align-items: center; }
+    .nav-links a { font-family: 'Bebas Neue',sans-serif; font-size: 0.82rem; letter-spacing: 0.14em; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--white); }
     .nav-cta {
-      background: var(--grad); color: #fff !important;
-      padding: 8px 18px; border-radius: 20px; font-weight: 700 !important;
+      background: var(--red) !important; color: var(--white) !important;
+      padding: 8px 16px !important; border-radius: 4px;
     }
 
     /* ── HERO ── */
     .hero {
-      text-align: center;
-      padding: 80px 24px 60px;
-      background: linear-gradient(160deg,#f5f0ff 0%,#fff0f5 50%,#fff5ee 100%);
+      min-height: 90dvh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 60px 24px;
+      position: relative; overflow: hidden;
     }
-    .hero-badge {
-      display: inline-block;
-      background: rgba(131,58,180,.1); color: var(--purple);
-      font-size: .78rem; font-weight: 700; padding: 5px 14px; border-radius: 20px;
-      letter-spacing: .05em; text-transform: uppercase; margin-bottom: 20px;
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 30% 40%, rgba(204,0,0,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 70% 70%, rgba(202,184,149,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: 0.78rem; letter-spacing: 0.25em;
+      color: var(--gold); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after {
+      content: ''; width: 30px; height: 1px; background: var(--gold);
     }
     .hero h1 {
-      font-size: clamp(2rem, 6vw, 3.4rem); font-weight: 900; line-height: 1.15;
-      margin-bottom: 18px; max-width: 700px; margin-left: auto; margin-right: auto;
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: clamp(3rem,12vw,7rem);
+      letter-spacing: 0.05em; line-height: 0.95;
+      color: var(--white); margin-bottom: 8px; position: relative; z-index: 1;
     }
-    .hero h1 span {
-      background: var(--grad); -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent; background-clip: text;
+    .hero h1 .red { color: var(--red); }
+    .hero h1 .gold { color: var(--gold); }
+    .hero-sub {
+      font-family: 'Lexend',sans-serif; font-weight: 800;
+      font-size: clamp(0.9rem,3vw,1.1rem);
+      color: var(--muted); letter-spacing: 0.04em;
+      margin-bottom: 12px; position: relative; z-index: 1;
     }
-    .hero p {
-      font-size: 1.05rem; color: #666; max-width: 520px;
-      margin: 0 auto 36px; line-height: 1.7;
+    .hero-kr {
+      font-family: 'Noto Sans KR',sans-serif;
+      font-size: 0.8rem; color: rgba(249,249,249,0.3);
+      margin-bottom: 40px; position: relative; z-index: 1;
     }
-    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 1; }
     .btn-primary {
-      padding: 14px 32px; border-radius: 30px; font-size: 1rem; font-weight: 700;
-      color: #fff; background: var(--grad); border: none; cursor: pointer;
-      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-      transition: opacity .2s, transform .15s; box-shadow: 0 6px 24px rgba(131,58,180,.3);
+      padding: 14px 28px; background: var(--red); color: var(--white);
+      font-family: 'Bebas Neue',sans-serif; font-size: 1rem; letter-spacing: 0.14em;
+      border: none; border-radius: 4px; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: opacity 0.2s, transform 0.15s;
     }
-    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
-    .btn-secondary {
-      padding: 14px 28px; border-radius: 30px; font-size: 1rem; font-weight: 700;
-      color: var(--purple); background: #fff; border: 2px solid #e0d0f0;
-      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-      transition: border-color .2s;
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-outline {
+      padding: 14px 28px; background: transparent;
+      border: 1px solid var(--border); color: var(--muted);
+      font-family: 'Bebas Neue',sans-serif; font-size: 1rem; letter-spacing: 0.14em;
+      border-radius: 4px; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: border-color 0.2s, color 0.2s;
     }
-    .btn-secondary:hover { border-color: var(--purple); }
+    .btn-outline:hover { border-color: var(--white); color: var(--white); }
 
-    /* ── FLOW DIAGRAM ── */
+    /* ── FLOW ── */
     .flow {
       display: flex; align-items: center; justify-content: center;
-      gap: 8px; flex-wrap: wrap;
-      padding: 48px 24px; background: #fff;
+      gap: 0; padding: 56px 24px; flex-wrap: nowrap; overflow-x: auto;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
     }
     .flow-step {
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-      padding: 20px 18px; border-radius: 16px;
-      border: 1.5px solid #f0e8ff; min-width: 110px; max-width: 130px;
-      background: #fafafa; text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; padding: 0 20px; text-align: center; min-width: 90px;
     }
-    .flow-icon { font-size: 2rem; }
-    .flow-label { font-size: .8rem; font-weight: 700; color: #444; }
-    .flow-arrow { font-size: 1.4rem; color: #d0c0e8; }
+    .flow-icon {
+      width: 48px; height: 48px; border: 1px solid var(--border);
+      border-radius: 4px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+    }
+    .flow-label {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: 0.7rem; letter-spacing: 0.12em; color: var(--muted);
+    }
+    .flow-arrow {
+      color: var(--red); font-size: 1.2rem; flex-shrink: 0;
+    }
+
+    /* ── SECTION ── */
+    section { padding: 72px 24px; max-width: 900px; margin: 0 auto; }
+    .section-eyebrow {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: 0.72rem; letter-spacing: 0.22em; color: var(--gold);
+      margin-bottom: 14px;
+    }
+    section h2 {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: clamp(2rem,6vw,3.2rem);
+      letter-spacing: 0.05em; color: var(--white); margin-bottom: 40px;
+      line-height: 1;
+    }
 
     /* ── FEATURES ── */
-    .features {
-      padding: 64px 24px;
-      background: linear-gradient(160deg,#f5f0ff 0%,#fff8fc 100%);
-    }
-    .features h2 { text-align: center; font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
-    .features .sub { text-align: center; color: #888; font-size: .95rem; margin-bottom: 40px; }
     .feat-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px; max-width: 900px; margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
     }
     .feat {
-      background: #fff; border-radius: 16px; padding: 22px 20px;
-      box-shadow: 0 4px 20px rgba(131,58,180,.08);
+      background: rgba(249,249,249,0.03);
+      border: 1px solid var(--border); border-radius: 4px; padding: 20px 16px;
     }
     .feat-icon {
-      width: 44px; height: 44px; border-radius: 12px;
-      background: linear-gradient(135deg,var(--purple),var(--pink));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem; margin-bottom: 12px;
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: 0.68rem; letter-spacing: 0.15em;
+      color: var(--red); margin-bottom: 10px;
     }
-    .feat h3 { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
-    .feat p { font-size: .83rem; color: #777; line-height: 1.6; }
+    .feat h3 {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: 1rem; letter-spacing: 0.06em;
+      color: var(--white); margin-bottom: 6px;
+    }
+    .feat p { font-size: 0.78rem; color: var(--muted); line-height: 1.7; }
 
     /* ── HOW IT WORKS ── */
-    .how { padding: 64px 24px; max-width: 700px; margin: 0 auto; }
-    .how h2 { text-align: center; font-size: 1.8rem; font-weight: 800; margin-bottom: 40px; }
-    .step-list { display: flex; flex-direction: column; gap: 0; }
+    .steps-list { display: flex; flex-direction: column; gap: 0; }
     .step-row {
-      display: flex; gap: 18px; padding-bottom: 28px; position: relative;
+      display: flex; gap: 16px; padding-bottom: 24px;
+      position: relative;
     }
     .step-row:not(:last-child)::after {
-      content:""; position:absolute; left:19px; top:44px; bottom:0;
-      width:2px; background:#f0e8ff;
+      content: ''; position: absolute;
+      left: 15px; top: 34px; bottom: 0;
+      width: 1px; background: var(--border);
     }
-    .step-num {
-      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-      background: var(--grad); color: #fff;
+    .step-n {
+      width: 32px; height: 32px; border-radius: 4px;
+      background: var(--red); color: var(--white);
+      font-family: 'Bebas Neue',sans-serif; font-size: 0.9rem;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: .9rem; z-index: 1;
+      flex-shrink: 0; z-index: 1;
     }
-    .step-body h3 { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
-    .step-body p { font-size: .85rem; color: #777; line-height: 1.6; }
+    .step-body h3 {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: 1rem; letter-spacing: 0.06em;
+      color: var(--white); margin-bottom: 4px; padding-top: 4px;
+    }
+    .step-body p { font-size: 0.8rem; color: var(--muted); line-height: 1.7; }
 
     /* ── CTA ── */
-    .cta {
-      text-align: center; padding: 72px 24px;
-      background: linear-gradient(135deg,#f5f0ff,#fff0f5,#fff5ee);
+    .cta-section {
+      border-top: 1px solid var(--border);
+      padding: 72px 24px; text-align: center;
     }
-    .cta h2 { font-size: 2rem; font-weight: 900; margin-bottom: 12px; }
-    .cta p { color: #777; margin-bottom: 32px; font-size: .95rem; }
+    .cta-section .eyebrow {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: 0.72rem; letter-spacing: 0.22em; color: var(--gold); margin-bottom: 12px;
+    }
+    .cta-section h2 {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: clamp(2rem,7vw,3.5rem); letter-spacing: 0.05em;
+      color: var(--white); margin-bottom: 10px; line-height: 1;
+    }
+    .cta-section p { font-size: 0.85rem; color: var(--muted); margin-bottom: 32px; }
 
     /* ── FOOTER ── */
     footer {
-      text-align: center; padding: 24px; border-top: 1px solid #f0e8ff;
-      font-size: .82rem; color: #bbb;
+      border-top: 1px solid var(--border);
+      padding: 24px; text-align: center;
     }
-    footer a { color: var(--purple); text-decoration: none; }
+    footer p {
+      font-family: 'Bebas Neue',sans-serif;
+      font-size: 0.72rem; letter-spacing: 0.14em; color: rgba(249,249,249,0.2);
+    }
+    footer a { color: var(--gold); text-decoration: none; }
 
     @media (max-width: 600px) {
-      nav { padding: 14px 18px; }
-      .nav-links .hide-mobile { display: none; }
-      .flow-arrow { display: none; }
+      .nav-links .hide { display: none; }
+      .flow { justify-content: flex-start; }
     }
   </style>
 </head>
 <body>
 
-<!-- NAV -->
+<div class="top-bar"></div>
+
 <nav>
-  <div class="nav-logo">QR Attendance</div>
+  <a href="#" class="nav-logo">WAU<span>SAN</span>30</a>
   <div class="nav-links">
-    <a href="#features" class="hide-mobile">Features</a>
-    <a href="#how" class="hide-mobile">How it works</a>
-    <a href="setup.html" class="nav-cta">Get started →</a>
+    <a href="#features" class="hide">FEATURES</a>
+    <a href="#how" class="hide">HOW IT WORKS</a>
+    <a href="setup.html" class="nav-cta">GET STARTED</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-badge">Free · Serverless · Google Sheets</div>
-  <h1>Collect Instagram IDs<br>at events with a <span>QR code</span></h1>
-  <p>Attendees scan, enter their Instagram handle, and it's instantly saved to your Google Sheet — no app, no database, no monthly fees.</p>
+  <div class="hero-eyebrow">QR ATTENDANCE SYSTEM</div>
+  <h1>RUN.<br><span class="red">CHECK</span><br><span class="gold">IN.</span></h1>
+  <p class="hero-sub">Collect Instagram IDs at events with a single QR scan.</p>
+  <p class="hero-kr">인스타그램 아이디 수집 · 무료 · 서버리스</p>
   <div class="hero-btns">
-    <a href="setup.html" class="btn-primary">Get started free →</a>
-    <a href="admin.html" class="btn-secondary">Open admin panel</a>
+    <a href="setup.html" class="btn-primary">SETUP IN 5 MIN →</a>
+    <a href="admin.html" class="btn-outline">ADMIN PANEL</a>
   </div>
 </section>
 
 <!-- FLOW -->
-<section class="flow">
-  <div class="flow-step"><div class="flow-icon">📱</div><div class="flow-label">Scan QR code</div></div>
+<div class="flow">
+  <div class="flow-step"><div class="flow-icon">📱</div><div class="flow-label">SCAN QR</div></div>
   <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-icon">✍️</div><div class="flow-label">Enter Instagram ID</div></div>
+  <div class="flow-step"><div class="flow-icon">✍️</div><div class="flow-label">ENTER ID</div></div>
   <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-icon">⚡</div><div class="flow-label">Saved instantly</div></div>
+  <div class="flow-step"><div class="flow-icon">⚡</div><div class="flow-label">SUBMITTED</div></div>
   <div class="flow-arrow">→</div>
-  <div class="flow-step"><div class="flow-icon">📊</div><div class="flow-label">Google Sheet updated</div></div>
-</section>
+  <div class="flow-step"><div class="flow-icon">📊</div><div class="flow-label">SHEET UPDATED</div></div>
+</div>
 
 <!-- FEATURES -->
-<section class="features" id="features">
-  <h2>Everything you need</h2>
-  <p class="sub">Built for event organizers. Works with any Google Sheet.</p>
+<section id="features">
+  <div class="section-eyebrow">FEATURES</div>
+  <h2>EVERYTHING<br>YOU NEED</h2>
   <div class="feat-grid">
     <div class="feat">
-      <div class="feat-icon">🔍</div>
-      <h3>Auto sheet detection</h3>
-      <p>Automatically reads your sheet headers and writes to the correct columns. No manual column mapping needed.</p>
+      <div class="feat-icon">01 · AUTO DETECT</div>
+      <h3>Dynamic sheet mapping</h3>
+      <p>Reads your header row automatically. Works with any Google Sheet structure.</p>
     </div>
     <div class="feat">
-      <div class="feat-icon">📅</div>
-      <h3>Per-session QR codes</h3>
-      <p>Generate a new QR for each event date in seconds from the admin panel. The date is encoded in the URL.</p>
+      <div class="feat-icon">02 · PER SESSION</div>
+      <h3>Date-encoded QR codes</h3>
+      <p>Generate a new QR for each session. Date travels in the URL — no code changes.</p>
     </div>
     <div class="feat">
-      <div class="feat-icon">🔁</div>
+      <div class="feat-icon">03 · SMART</div>
       <h3>Returning guest tracking</h3>
-      <p>Existing attendees are recognized automatically. Their count is incremented and the session is marked.</p>
+      <p>Existing members get their count incremented. New guests get a fresh row.</p>
     </div>
     <div class="feat">
-      <div class="feat-icon">🚫</div>
+      <div class="feat-icon">04 · SAFE</div>
       <h3>Duplicate prevention</h3>
-      <p>Already attended today? The system silently skips the duplicate — no double-counting.</p>
+      <p>Same handle, same session? Silently skipped. No double-counting ever.</p>
     </div>
     <div class="feat">
-      <div class="feat-icon">🛡️</div>
+      <div class="feat-icon">05 · PROTECTED</div>
       <h3>Rate limiting</h3>
-      <p>Built-in per-user rate limiting prevents spam submissions without any external services.</p>
+      <p>Built-in per-user rate limiting prevents spam with no extra services.</p>
     </div>
     <div class="feat">
-      <div class="feat-icon">📋</div>
-      <h3>Automatic logging</h3>
-      <p>Every submission is logged to a dedicated Log sheet with timestamp, event type, and detail.</p>
-    </div>
-    <div class="feat">
-      <div class="feat-icon">🆓</div>
+      <div class="feat-icon">06 · FREE</div>
       <h3>Completely free</h3>
-      <p>Runs entirely on Google Apps Script and GitHub Pages. No servers, no hosting costs, no subscriptions.</p>
-    </div>
-    <div class="feat">
-      <div class="feat-icon">📲</div>
-      <h3>Mobile-first design</h3>
-      <p>The check-in page is optimized for phones — minimal, fast, and works on any browser.</p>
+      <p>Runs on Google Apps Script + GitHub Pages. Zero servers, zero fees.</p>
     </div>
   </div>
 </section>
 
 <!-- HOW IT WORKS -->
-<section class="how" id="how">
-  <h2>How it works</h2>
-  <div class="step-list">
+<section id="how">
+  <div class="section-eyebrow">HOW IT WORKS</div>
+  <h2>SETUP IN<br>4 STEPS</h2>
+  <div class="steps-list">
     <div class="step-row">
-      <div class="step-num">1</div>
+      <div class="step-n">1</div>
       <div class="step-body">
         <h3>Run the setup wizard</h3>
-        <p>Paste the backend script into Google Apps Script, deploy it as a Web App, and paste the URL into the setup wizard. Takes about 5 minutes.</p>
+        <p>Paste the backend script into Google Apps Script, deploy as a Web App, then paste the URL into setup.html. Takes about 5 minutes.</p>
       </div>
     </div>
     <div class="step-row">
-      <div class="step-num">2</div>
+      <div class="step-n">2</div>
       <div class="step-body">
-        <h3>Open the admin panel before each event</h3>
-        <p>Enter the session number and date, then click Generate. Download or print the QR code PNG.</p>
+        <h3>Open admin before each event</h3>
+        <p>Enter session number + date. Click Generate. Download the QR PNG.</p>
       </div>
     </div>
     <div class="step-row">
-      <div class="step-num">3</div>
+      <div class="step-n">3</div>
       <div class="step-body">
-        <h3>Display the QR code at your event</h3>
-        <p>Attendees scan it with their phone camera, enter their Instagram handle, and tap Submit.</p>
+        <h3>Display the QR at your event</h3>
+        <p>Attendees scan with their phone, enter their Instagram ID, tap Check In.</p>
       </div>
     </div>
     <div class="step-row">
-      <div class="step-num">4</div>
+      <div class="step-n">4</div>
       <div class="step-body">
-        <h3>Your Google Sheet updates in real time</h3>
-        <p>New guests are added as rows. Returning guests get their count incremented and the session date marked with O.</p>
+        <h3>Sheet updates in real time</h3>
+        <p>New guests get a row. Returning guests get their count incremented and the session date marked O.</p>
       </div>
     </div>
   </div>
 </section>
 
 <!-- CTA -->
-<section class="cta">
-  <h2>Ready to get started?</h2>
-  <p>Set up in 5 minutes. No credit card, no sign-up required.</p>
-  <a href="setup.html" class="btn-primary" style="font-size:1.05rem;padding:16px 36px">Start setup →</a>
-</section>
+<div class="cta-section">
+  <div class="eyebrow">GET STARTED</div>
+  <h2>RUN YOUR<br>FIRST SESSION</h2>
+  <p>Free setup · No credit card · No sign-up required</p>
+  <a href="setup.html" class="btn-primary" style="font-size:1.1rem;padding:16px 36px">START SETUP →</a>
+</div>
 
 <!-- FOOTER -->
 <footer>
   <p>
-    Built with Google Apps Script · Google Sheets · GitHub Pages ·
-    <a href="https://github.com/xylitolboy/instagram-qr-attendance" target="_blank">View on GitHub</a>
+    WAUSAN30 · SEOUL RUNNING CREW · 2014— ·
+    <a href="https://github.com/xylitolboy/instagram-qr-attendance" target="_blank">VIEW ON GITHUB</a> ·
+    <a href="https://wausan30.com" target="_blank">WAUSAN30.COM</a>
   </p>
 </footer>
 
