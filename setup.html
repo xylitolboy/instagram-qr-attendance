@@ -471,17 +471,40 @@ function updateProgress(active) {
   }
 }
 
-// ── GAS fetch helper ─────────────────────────────────────────────────────────
-// GAS GET requests work cross-origin fine (returns JSON directly).
-// GAS POST requests redirect to googleusercontent.com — fetch() can't follow
-// cross-origin redirects, so we use GET with ?action= for all read operations.
-async function gasGet(url, params) {
-  const u = new URL(url);
-  Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
-  const res = await fetch(u.toString(), { redirect: "follow" });
-  // GAS may return a redirect to googleusercontent — follow it
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  return res.json();
+// ── JSONP helper ──────────────────────────────────────────────────────────────
+// fetch() cannot follow GAS cross-origin redirects in the browser.
+// JSONP injects a <script> tag — GAS wraps the JSON in our callback function,
+// bypassing all CORS/redirect restrictions entirely.
+let _jsonpCounter = 0;
+function jsonpGet(url, params) {
+  return new Promise((resolve, reject) => {
+    const cbName = "__gasCb" + (++_jsonpCounter);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error("Request timed out (10s). Check the URL and try again."));
+    }, 10000);
+
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      resolve(data);
+    };
+
+    const u = new URL(url);
+    Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
+    u.searchParams.set("callback", cbName);
+
+    const script = document.createElement("script");
+    script.src = u.toString();
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      reject(new Error("Script load failed — check the Web App URL."));
+    };
+    document.head.appendChild(script);
+  });
 }
 
 // ── STEP 2: Test connection ───────────────────────────────────────────────────
@@ -494,8 +517,7 @@ async function testConnection() {
   document.getElementById("testBtn").disabled = true;
 
   try {
-    // Use GET — works cross-origin without CORS issues
-    const d = await gasGet(url);
+    const d = await jsonpGet(url);
     if (d.status === "ok") {
       statusEl.innerHTML = '<span class="status-badge ok">✓ Connected — backend is running</span>';
       state.webAppUrl = url;
@@ -506,7 +528,7 @@ async function testConnection() {
       statusEl.innerHTML = '<span class="status-badge err">✗ ' + (d.message || "Unexpected response") + '</span>';
     }
   } catch (e) {
-    statusEl.innerHTML = '<span class="status-badge err">✗ Connection failed — check URL and "Anyone" access setting</span>';
+    statusEl.innerHTML = '<span class="status-badge err">✗ ' + e.message + '</span>';
   }
   document.getElementById("testBtn").disabled = false;
 }
@@ -517,8 +539,7 @@ async function loadSheets() {
   statusEl.innerHTML = '<span class="spin"></span> Reading your sheet structure…';
 
   try {
-    // Use GET ?action=inspect — avoids the POST redirect CORS issue
-    const data = await gasGet(state.webAppUrl, { action: "inspect" });
+    const data = await jsonpGet(state.webAppUrl, { action: "inspect" });
 
     if (!data.sheets || !data.sheets.length) {
       statusEl.innerHTML = '<span class="status-badge err">✗ Could not read sheets. Check SPREADSHEET_ID in Code.gs.</span>';
@@ -530,7 +551,7 @@ async function loadSheets() {
     renderSheetLists();
 
   } catch (e) {
-    statusEl.innerHTML = '<span class="status-badge err">✗ ' + e.message + ' — check SPREADSHEET_ID and deployment access</span>';
+    statusEl.innerHTML = '<span class="status-badge err">✗ ' + e.message + '</span>';
   }
 }
 

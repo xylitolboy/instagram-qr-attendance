@@ -500,15 +500,29 @@ function saveSettings() {
   toast("Settings saved ✓");
 }
 
+// JSONP helper for cross-origin GAS calls
+function jsonpGet(url, params) {
+  return new Promise((resolve, reject) => {
+    const cb = "__gasCb" + Date.now();
+    const t = setTimeout(() => { delete window[cb]; script.remove(); reject(new Error("Timeout")); }, 10000);
+    window[cb] = (data) => { clearTimeout(t); delete window[cb]; script.remove(); resolve(data); };
+    const u = new URL(url);
+    Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
+    u.searchParams.set("callback", cb);
+    const script = document.createElement("script");
+    script.src = u.toString();
+    script.onerror = () => { clearTimeout(t); delete window[cb]; reject(new Error("Load failed")); };
+    document.head.appendChild(script);
+  });
+}
+
 async function testBackend() {
   const url = document.getElementById("backendURL").value.trim();
   const res = document.getElementById("pingResult");
   if (!url) { res.textContent = "No backend URL entered."; return; }
   res.textContent = "Pinging…";
   try {
-    // GAS GET works cross-origin; POST triggers a redirect fetch() can't follow
-    const r = await fetch(url, { redirect: "follow" });
-    const d = await r.json();
+    const d = await jsonpGet(url);
     if (d.status === "ok") {
       res.style.color = "#16a34a";
       res.textContent = "✓ Connected — " + (d.message || "OK");

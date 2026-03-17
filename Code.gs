@@ -73,13 +73,29 @@ const CONFIG = {
 // ── ENTRY POINTS ──────────────────────────────────────────────────────────────
 
 function doGet(e) {
-  const action = (e && e.parameter && e.parameter.action) || "";
-  if (action === "inspect") return inspectResponse();
-  return json({
-    status: "ok",
-    message: "Instagram QR Attendance Collector is running.",
-    fallback_date: CONFIG.FALLBACK_DATE,
-  });
+  const action   = (e && e.parameter && e.parameter.action)   || "";
+  const callback = (e && e.parameter && e.parameter.callback) || "";
+
+  let output;
+  if (action === "inspect") {
+    output = inspectResponse();
+  } else {
+    output = json({
+      status: "ok",
+      message: "Instagram QR Attendance Collector is running.",
+      fallback_date: CONFIG.FALLBACK_DATE,
+    });
+  }
+
+  // JSONP support — wraps response in callback(…) for cross-origin browser calls
+  if (callback) {
+    const body = output.getContent();
+    return ContentService
+      .createTextOutput(callback + "(" + body + ")")
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  return output;
 }
 
 function doPost(e) {
