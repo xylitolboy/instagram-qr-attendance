@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Instagram QR Attendance — Free & Serverless</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --purple: #833AB4; --pink: #E1306C; --orange: #F77737;
+      --grad: linear-gradient(90deg, var(--purple), var(--pink), var(--orange));
+    }
+    body {
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      color: #1a1a1a; background: #fff; overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 32px; border-bottom: 1px solid #f0e8ff;
+      position: sticky; top: 0; background: rgba(255,255,255,.95);
+      backdrop-filter: blur(12px); z-index: 100;
+    }
+    .nav-logo {
+      font-size: 1.1rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a { font-size: .88rem; color: #666; text-decoration: none; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: var(--purple); }
+    .nav-cta {
+      background: var(--grad); color: #fff !important;
+      padding: 8px 18px; border-radius: 20px; font-weight: 700 !important;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 80px 24px 60px;
+      background: linear-gradient(160deg,#f5f0ff 0%,#fff0f5 50%,#fff5ee 100%);
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(131,58,180,.1); color: var(--purple);
+      font-size: .78rem; font-weight: 700; padding: 5px 14px; border-radius: 20px;
+      letter-spacing: .05em; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 6vw, 3.4rem); font-weight: 900; line-height: 1.15;
+      margin-bottom: 18px; max-width: 700px; margin-left: auto; margin-right: auto;
+    }
+    .hero h1 span {
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero p {
+      font-size: 1.05rem; color: #666; max-width: 520px;
+      margin: 0 auto 36px; line-height: 1.7;
+    }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      padding: 14px 32px; border-radius: 30px; font-size: 1rem; font-weight: 700;
+      color: #fff; background: var(--grad); border: none; cursor: pointer;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      transition: opacity .2s, transform .15s; box-shadow: 0 6px 24px rgba(131,58,180,.3);
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-secondary {
+      padding: 14px 28px; border-radius: 30px; font-size: 1rem; font-weight: 700;
+      color: var(--purple); background: #fff; border: 2px solid #e0d0f0;
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      transition: border-color .2s;
+    }
+    .btn-secondary:hover { border-color: var(--purple); }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; flex-wrap: wrap;
+      padding: 48px 24px; background: #fff;
+    }
+    .flow-step {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 20px 18px; border-radius: 16px;
+      border: 1.5px solid #f0e8ff; min-width: 110px; max-width: 130px;
+      background: #fafafa; text-align: center;
+    }
+    .flow-icon { font-size: 2rem; }
+    .flow-label { font-size: .8rem; font-weight: 700; color: #444; }
+    .flow-arrow { font-size: 1.4rem; color: #d0c0e8; }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 64px 24px;
+      background: linear-gradient(160deg,#f5f0ff 0%,#fff8fc 100%);
+    }
+    .features h2 { text-align: center; font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+    .features .sub { text-align: center; color: #888; font-size: .95rem; margin-bottom: 40px; }
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px; max-width: 900px; margin: 0 auto;
+    }
+    .feat {
+      background: #fff; border-radius: 16px; padding: 22px 20px;
+      box-shadow: 0 4px 20px rgba(131,58,180,.08);
+    }
+    .feat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg,var(--purple),var(--pink));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 12px;
+    }
+    .feat h3 { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
+    .feat p { font-size: .83rem; color: #777; line-height: 1.6; }
+
+    /* ── HOW IT WORKS ── */
+    .how { padding: 64px 24px; max-width: 700px; margin: 0 auto; }
+    .how h2 { text-align: center; font-size: 1.8rem; font-weight: 800; margin-bottom: 40px; }
+    .step-list { display: flex; flex-direction: column; gap: 0; }
+    .step-row {
+      display: flex; gap: 18px; padding-bottom: 28px; position: relative;
+    }
+    .step-row:not(:last-child)::after {
+      content:""; position:absolute; left:19px; top:44px; bottom:0;
+      width:2px; background:#f0e8ff;
+    }
+    .step-num {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: var(--grad); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .9rem; z-index: 1;
+    }
+    .step-body h3 { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+    .step-body p { font-size: .85rem; color: #777; line-height: 1.6; }
+
+    /* ── CTA ── */
+    .cta {
+      text-align: center; padding: 72px 24px;
+      background: linear-gradient(135deg,#f5f0ff,#fff0f5,#fff5ee);
+    }
+    .cta h2 { font-size: 2rem; font-weight: 900; margin-bottom: 12px; }
+    .cta p { color: #777; margin-bottom: 32px; font-size: .95rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center; padding: 24px; border-top: 1px solid #f0e8ff;
+      font-size: .82rem; color: #bbb;
+    }
+    footer a { color: var(--purple); text-decoration: none; }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 18px; }
+      .nav-links .hide-mobile { display: none; }
+      .flow-arrow { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">QR Attendance</div>
+  <div class="nav-links">
+    <a href="#features" class="hide-mobile">Features</a>
+    <a href="#how" class="hide-mobile">How it works</a>
+    <a href="setup.html" class="nav-cta">Get started →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">Free · Serverless · Google Sheets</div>
+  <h1>Collect Instagram IDs<br>at events with a <span>QR code</span></h1>
+  <p>Attendees scan, enter their Instagram handle, and it's instantly saved to your Google Sheet — no app, no database, no monthly fees.</p>
+  <div class="hero-btns">
+    <a href="setup.html" class="btn-primary">Get started free →</a>
+    <a href="admin.html" class="btn-secondary">Open admin panel</a>
+  </div>
+</section>
+
+<!-- FLOW -->
+<section class="flow">
+  <div class="flow-step"><div class="flow-icon">📱</div><div class="flow-label">Scan QR code</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-icon">✍️</div><div class="flow-label">Enter Instagram ID</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-icon">⚡</div><div class="flow-label">Saved instantly</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="flow-icon">📊</div><div class="flow-label">Google Sheet updated</div></div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <h2>Everything you need</h2>
+  <p class="sub">Built for event organizers. Works with any Google Sheet.</p>
+  <div class="feat-grid">
+    <div class="feat">
+      <div class="feat-icon">🔍</div>
+      <h3>Auto sheet detection</h3>
+      <p>Automatically reads your sheet headers and writes to the correct columns. No manual column mapping needed.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📅</div>
+      <h3>Per-session QR codes</h3>
+      <p>Generate a new QR for each event date in seconds from the admin panel. The date is encoded in the URL.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔁</div>
+      <h3>Returning guest tracking</h3>
+      <p>Existing attendees are recognized automatically. Their count is incremented and the session is marked.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🚫</div>
+      <h3>Duplicate prevention</h3>
+      <p>Already attended today? The system silently skips the duplicate — no double-counting.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🛡️</div>
+      <h3>Rate limiting</h3>
+      <p>Built-in per-user rate limiting prevents spam submissions without any external services.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📋</div>
+      <h3>Automatic logging</h3>
+      <p>Every submission is logged to a dedicated Log sheet with timestamp, event type, and detail.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🆓</div>
+      <h3>Completely free</h3>
+      <p>Runs entirely on Google Apps Script and GitHub Pages. No servers, no hosting costs, no subscriptions.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📲</div>
+      <h3>Mobile-first design</h3>
+      <p>The check-in page is optimized for phones — minimal, fast, and works on any browser.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <h2>How it works</h2>
+  <div class="step-list">
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Run the setup wizard</h3>
+        <p>Paste the backend script into Google Apps Script, deploy it as a Web App, and paste the URL into the setup wizard. Takes about 5 minutes.</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Open the admin panel before each event</h3>
+        <p>Enter the session number and date, then click Generate. Download or print the QR code PNG.</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Display the QR code at your event</h3>
+        <p>Attendees scan it with their phone camera, enter their Instagram handle, and tap Submit.</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Your Google Sheet updates in real time</h3>
+        <p>New guests are added as rows. Returning guests get their count incremented and the session date marked with O.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>Ready to get started?</h2>
+  <p>Set up in 5 minutes. No credit card, no sign-up required.</p>
+  <a href="setup.html" class="btn-primary" style="font-size:1.05rem;padding:16px 36px">Start setup →</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    Built with Google Apps Script · Google Sheets · GitHub Pages ·
+    <a href="https://github.com/gangminlee/instagram-qr-attendance" target="_blank">View on GitHub</a>
+  </p>
+</footer>
+
+</body>
+</html>

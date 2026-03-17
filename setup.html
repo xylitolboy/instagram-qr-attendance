@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Setup — Instagram QR Attendance</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --purple: #833AB4; --pink: #E1306C; --orange: #F77737;
+      --grad: linear-gradient(90deg, var(--purple), var(--pink), var(--orange));
+      --r: 14px;
+    }
+    body {
+      min-height: 100dvh;
+      background: linear-gradient(135deg,#f5f0ff 0%,#fff0f5 50%,#fff5ee 100%);
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      padding: 32px 16px 80px;
+      display: flex; flex-direction: column; align-items: center; gap: 24px;
+    }
+    .hdr { text-align: center; }
+    .hdr h1 {
+      font-size: 1.7rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hdr p { color: #888; font-size: .9rem; margin-top: 6px; }
+
+    /* Step progress */
+    .steps {
+      display: flex; align-items: center; gap: 0;
+      width: 100%; max-width: 480px;
+    }
+    .step-item { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+    .step-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 800; z-index: 1;
+      transition: .3s;
+    }
+    .step-circle.done { background: var(--grad); color: #fff; }
+    .step-circle.active { background: var(--grad); color: #fff; box-shadow: 0 0 0 4px rgba(131,58,180,.2); }
+    .step-circle.pending { background: #e8e0f0; color: #aaa; }
+    .step-label { font-size: .7rem; color: #aaa; margin-top: 5px; text-align: center; font-weight: 600; }
+    .step-label.active { color: var(--purple); }
+    .step-connector { flex: 1; height: 2px; background: #e8e0f0; margin-top: -16px; }
+    .step-connector.done { background: var(--purple); }
+
+    /* Card */
+    .card {
+      background: #fff; border-radius: 20px; padding: 26px 22px;
+      width: 100%; max-width: 480px;
+      box-shadow: 0 6px 32px rgba(131,58,180,.1);
+    }
+    .card h2 { font-size: 1.05rem; font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
+    .card .desc { font-size: .85rem; color: #888; margin-bottom: 20px; line-height: 1.5; }
+
+    /* Fields */
+    .field { margin-bottom: 14px; }
+    label { display: block; font-size: .78rem; font-weight: 600; color: #666; margin-bottom: 5px; }
+    input[type="text"], input[type="url"] {
+      width: 100%; padding: 12px 13px; font-size: .95rem;
+      border: 2px solid #e8e0f0; border-radius: var(--r); outline: none;
+      color: #1a1a1a; background: #fafafa; -webkit-appearance: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus { border-color: var(--purple); background: #fff; box-shadow: 0 0 0 4px rgba(131,58,180,.08); }
+    input.ok  { border-color: #22c55e; }
+    input.err { border-color: var(--pink); }
+
+    .hint { font-size: .78rem; color: #aaa; margin-top: 5px; }
+    .hint a { color: var(--purple); text-decoration: none; }
+
+    /* Buttons */
+    .btn {
+      width: 100%; padding: 13px; font-size: .95rem; font-weight: 700; color: #fff;
+      background: var(--grad); border: none; border-radius: var(--r); cursor: pointer;
+      transition: opacity .2s, transform .15s;
+    }
+    .btn:hover { opacity: .9; }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn.outline { background: none; border: 2px solid var(--purple); color: var(--purple); }
+    .btn-row { display: flex; gap: 10px; margin-top: 4px; }
+    .btn-row .btn { flex: 1; }
+
+    /* Code block */
+    .code-block {
+      background: #1e1e2e; color: #cdd6f4; border-radius: var(--r);
+      padding: 14px 16px; font-size: .82rem; font-family: "Fira Mono","Courier New",monospace;
+      overflow-x: auto; white-space: pre; margin-bottom: 16px; position: relative;
+    }
+    .copy-btn {
+      position: absolute; top: 8px; right: 10px;
+      background: rgba(255,255,255,.1); color: #cdd6f4;
+      border: none; border-radius: 8px; padding: 4px 10px;
+      font-size: .72rem; cursor: pointer; transition: background .2s;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,.2); }
+
+    /* Sheet cols preview */
+    .sheet-preview {
+      border: 1.5px solid #e8e0f0; border-radius: var(--r); overflow: hidden;
+      margin-bottom: 16px; font-size: .8rem;
+    }
+    .sp-row { display: flex; }
+    .sp-row.header { background: #f7f3ff; font-weight: 700; }
+    .sp-cell { padding: 7px 10px; flex: 1; border-right: 1px solid #f0e8ff; color: #444; }
+    .sp-cell:last-child { border-right: none; }
+    .sp-cell.hl { background: rgba(131,58,180,.06); color: var(--purple); }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px; font-size: .8rem; font-weight: 600;
+      margin-top: 8px;
+    }
+    .status-badge.ok  { background: #e6f9ee; color: #16a34a; }
+    .status-badge.err { background: #ffeef3; color: #dc2626; }
+    .status-badge.pending { background: #f5f0ff; color: var(--purple); }
+
+    /* Sheet list */
+    .sheet-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .sheet-item {
+      background: #fafafa; border: 1.5px solid #e8e0f0; border-radius: var(--r);
+      padding: 10px 14px; cursor: pointer; transition: border-color .2s;
+    }
+    .sheet-item:hover, .sheet-item.selected { border-color: var(--purple); background: #f7f3ff; }
+    .sheet-item .si-name { font-weight: 700; font-size: .9rem; color: #1a1a1a; }
+    .sheet-item .si-cols { font-size: .75rem; color: #aaa; margin-top: 2px; }
+
+    /* Column mapper */
+    .col-map { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .col-row { display: flex; align-items: center; gap: 10px; }
+    .col-row label { flex: 1; font-size: .82rem; font-weight: 600; color: #555; margin: 0; }
+    .col-row select {
+      flex: 1; padding: 8px 10px; font-size: .85rem;
+      border: 2px solid #e8e0f0; border-radius: 10px; outline: none;
+      background: #fafafa; -webkit-appearance: none; color: #1a1a1a;
+      transition: border-color .2s;
+    }
+    .col-row select:focus { border-color: var(--purple); }
+
+    /* Success screen */
+    .success-screen {
+      display: none; flex-direction: column; align-items: center; gap: 16px;
+      padding: 12px 0; text-align: center;
+    }
+    .check-circle {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--grad); display: flex; align-items: center; justify-content: center;
+    }
+    .check-circle svg { width: 36px; height: 36px; stroke: #fff; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .success-screen h2 { font-size: 1.4rem; font-weight: 800; color: #1a1a1a; }
+    .success-screen p { font-size: .88rem; color: #888; max-width: 320px; line-height: 1.6; }
+
+    /* Spinner */
+    .spin { width: 18px; height: 18px; border: 2.5px solid rgba(131,58,180,.3); border-top-color: var(--purple); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Setup Wizard</h1>
+  <p>Connect your Google Sheet in 4 steps</p>
+</div>
+
+<!-- Step progress -->
+<div class="steps" id="stepProgress">
+  <div class="step-item">
+    <div class="step-circle active" id="sc1">1</div>
+    <div class="step-label active" id="sl1">Script</div>
+  </div>
+  <div class="step-connector" id="conn1"></div>
+  <div class="step-item">
+    <div class="step-circle pending" id="sc2">2</div>
+    <div class="step-label" id="sl2">Connect</div>
+  </div>
+  <div class="step-connector" id="conn2"></div>
+  <div class="step-item">
+    <div class="step-circle pending" id="sc3">3</div>
+    <div class="step-label" id="sl3">Sheets</div>
+  </div>
+  <div class="step-connector" id="conn3"></div>
+  <div class="step-item">
+    <div class="step-circle pending" id="sc4">4</div>
+    <div class="step-label" id="sl4">Done</div>
+  </div>
+</div>
+
+<!-- ── STEP 1: Paste script ── -->
+<div class="card" id="step1">
+  <h2>Step 1 — Deploy the backend script</h2>
+  <p class="desc">Open your Google Sheet → <strong>Extensions → Apps Script</strong>. Paste the code below, replacing all existing code. Then deploy as a Web App.</p>
+
+  <div style="position:relative">
+    <div class="code-block" id="codeBlock">Loading Code.gs…</div>
+    <button class="copy-btn" onclick="copyCode()">Copy</button>
+  </div>
+
+  <p class="desc" style="margin-bottom:16px">After pasting, click <strong>Deploy → New Deployment → Web App</strong>:<br>
+  • Execute as: <strong>Me</strong><br>
+  • Who has access: <strong>Anyone</strong></p>
+
+  <p class="hint" style="margin-bottom:18px">
+    Need help?
+    <a href="https://github.com/gangminlee/instagram-qr-attendance#deploy" target="_blank">View step-by-step guide →</a>
+  </p>
+
+  <button class="btn" onclick="goStep(2)">I've deployed it → Next</button>
+</div>
+
+<!-- ── STEP 2: Connect ── -->
+<div class="card" id="step2" style="display:none">
+  <h2>Step 2 — Paste your Web App URL</h2>
+  <p class="desc">After deploying, copy the Web App URL from the deployment dialog and paste it here.</p>
+
+  <div class="field">
+    <label>Web App URL</label>
+    <input type="url" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec"/>
+    <p class="hint">Must start with <code>https://script.google.com/macros/s/</code></p>
+  </div>
+
+  <button class="btn" id="testBtn" onclick="testConnection()" style="margin-bottom:10px">Test connection</button>
+  <div id="connStatus"></div>
+
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn outline" onclick="goStep(1)">← Back</button>
+    <button class="btn" id="step2Next" onclick="goStep(3)" disabled>Next →</button>
+  </div>
+</div>
+
+<!-- ── STEP 3: Map sheets ── -->
+<div class="card" id="step3" style="display:none">
+  <h2>Step 3 — Map your sheet columns</h2>
+  <p class="desc">Your sheet structure was detected. Select which tabs to use for monthly attendance and the summary.</p>
+
+  <div id="sheetDetectStatus" style="margin-bottom:14px"></div>
+
+  <!-- Monthly -->
+  <label style="font-size:.82rem;font-weight:700;color:#555;margin-bottom:8px;display:block">Monthly attendance sheet</label>
+  <div class="sheet-list" id="monthlyList"></div>
+
+  <!-- Summary -->
+  <label style="font-size:.82rem;font-weight:700;color:#555;margin-bottom:8px;display:block">Overall summary sheet</label>
+  <div class="sheet-list" id="summaryList"></div>
+
+  <!-- Summary data start row -->
+  <div class="field" style="margin-top:4px">
+    <label>Summary data starts at row</label>
+    <input type="text" id="summaryStartRow" value="3" style="max-width:80px"/>
+    <p class="hint">Use 3 if row 1 is a title and row 2 is blank.</p>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn outline" onclick="goStep(2)">← Back</button>
+    <button class="btn" onclick="finishSetup()">Save & finish →</button>
+  </div>
+</div>
+
+<!-- ── STEP 4: Done ── -->
+<div class="card" id="step4" style="display:none">
+  <div class="success-screen" id="successScreen" style="display:flex">
+    <div class="check-circle"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <h2>You're all set!</h2>
+    <p>Your Google Sheet is connected and ready to collect Instagram IDs via QR code.</p>
+
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:4px">
+      <button class="btn" onclick="goAdmin()">Open Admin Panel →</button>
+      <button class="btn outline" onclick="window.open('instagram.html','_blank')">Preview check-in page</button>
+    </div>
+
+    <div style="background:#f7f3ff;border-radius:14px;padding:14px 16px;text-align:left;width:100%;margin-top:8px">
+      <p style="font-size:.78rem;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Your config</p>
+      <p style="font-size:.82rem;color:#555;word-break:break-all" id="configSummary"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  webAppUrl:      "",
+  sheets:         [],
+  monthlySheet:   "",
+  summarySheet:   "",
+  summaryStartRow: 3,
+  pageUrl:        window.location.origin + window.location.pathname.replace("setup.html","instagram.html"),
+};
+
+// ── CODE.GS CONTENT ──────────────────────────────────────────────────────────
+// Embedded directly so setup.html is standalone
+const CODE_GS = `/**
+ * Instagram QR Attendance Collector — Backend
+ * Paste into Apps Script, set SPREADSHEET_ID, deploy as Web App.
+ * Full docs: https://github.com/gangminlee/instagram-qr-attendance
+ */
+
+const CONFIG = {
+  SPREADSHEET_ID: "YOUR_SPREADSHEET_ID",   // ← change this
+  MONTHLY_SHEET:  "Sheet1",                // ← monthly tab name
+  SUMMARY_SHEET:  "Summary",               // ← summary tab name
+  SUMMARY_DATA_START_ROW: 3,
+  MONTHLY_COL_RANK:   0,
+  MONTHLY_COL_HANDLE: 1,
+  MONTHLY_COL_COUNT:  2,
+  SUMMARY_COL_HANDLE: 0,
+  SUMMARY_COL_COUNT:  1,
+  SUMMARY_COL_IG_URL: 6,
+  FALLBACK_DATE: "",
+  RATE_LIMIT_MAX: 10,
+  RATE_LIMIT_WINDOW_MS: 600000,
+  LOG_SHEET: "Log",
+};
+
+function doGet(e){
+  if((e&&e.parameter&&e.parameter.action)==="inspect") return inspectResponse();
+  return json({status:"ok",message:"Instagram QR Attendance Collector is running."});
+}
+function doPost(e){
+  try{
+    var body;
+    try{body=JSON.parse(e.postData.contents);}catch(_){return json({status:"error",message:"Invalid JSON."});}
+    if(body.action==="inspect") return inspectResponse();
+    var sessionDate=resolveDate(body.date);
+    if(!sessionDate) return json({status:"error",message:"No session date."});
+    var handle=(body.instagram||"").toString().replace(/^@+/,"").trim();
+    if(!handle) return json({status:"error",message:"Handle required."});
+    if(handle.length<3) return json({status:"error",message:"Too short."});
+    if(handle.length>30) return json({status:"error",message:"Too long."});
+    if(!/^[a-zA-Z0-9._]+$/.test(handle)) return json({status:"error",message:"Invalid chars."});
+    var uid=getUid(e);
+    if(isRateLimited(uid)){writeLog("RATE_LIMIT",uid,handle);return json({status:"error",message:"Rate limited."});}
+    var ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var isNew=recordAttendance(ss,handle,sessionDate);
+    writeLog(isNew?"NEW_GUEST":"RETURNING",uid,handle+"["+(body.session||"")+sessionDate+"]");
+    return json({status:"success",isNew:isNew,session:sessionDate});
+  }catch(err){writeLog("ERROR","unknown",err.toString());return json({status:"error",message:err.message});}
+}
+function recordAttendance(ss,handle,date){
+  var m=ss.getSheetByName(CONFIG.MONTHLY_SHEET);
+  var s=ss.getSheetByName(CONFIG.SUMMARY_SHEET);
+  if(!m)throw new Error("Sheet not found: "+CONFIG.MONTHLY_SHEET);
+  if(!s)throw new Error("Sheet not found: "+CONFIG.SUMMARY_SHEET);
+  var isNew=updateMonthly(m,handle,date);
+  updateSummary(s,handle);
+  return isNew;
+}
+function updateMonthly(sheet,handle,date){
+  var lc=sheet.getLastColumn(),lr=sheet.getLastRow();
+  var hdrs=lc>0?sheet.getRange(1,1,1,lc).getValues()[0]:[];
+  var sci=-1;
+  for(var i=0;i<hdrs.length;i++){if(tds(hdrs[i])===date){sci=i;break;}}
+  if(sci===-1){sci=lc;sheet.getRange(1,sci+1).setValue(date);}
+  if(lr>1){
+    var ids=sheet.getRange(2,CONFIG.MONTHLY_COL_HANDLE+1,lr-1,1).getValues().flat().map(function(v){return String(v).toLowerCase().trim();});
+    var idx=ids.findIndex(function(v){return v===handle.toLowerCase();});
+    if(idx!==-1){
+      var r=idx+2;
+      var cc=sheet.getRange(r,CONFIG.MONTHLY_COL_COUNT+1);
+      var sc=sheet.getRange(r,sci+1);
+      if(String(sc.getValue()).trim().toUpperCase()!=="O"){sc.setValue("O");cc.setValue((Number(cc.getValue())||0)+1);}
+      return false;
+    }
+  }
+  var rank=sheet.getLastRow();
+  var tc=Math.max(sci+1,lc);
+  var row=new Array(tc).fill("");
+  row[CONFIG.MONTHLY_COL_RANK]=rank;row[CONFIG.MONTHLY_COL_HANDLE]=handle;
+  row[CONFIG.MONTHLY_COL_COUNT]=1;row[sci]="O";
+  sheet.appendRow(row);return true;
+}
+function updateSummary(sheet,handle){
+  var sr=CONFIG.SUMMARY_DATA_START_ROW,lr=sheet.getLastRow();
+  if(lr>=sr){
+    var ids=sheet.getRange(sr,CONFIG.SUMMARY_COL_HANDLE+1,lr-sr+1,1).getValues().flat().map(function(v){return String(v).toLowerCase().trim();});
+    var idx=ids.findIndex(function(v){return v===handle.toLowerCase();});
+    if(idx!==-1){var cc=sheet.getRange(idx+sr,CONFIG.SUMMARY_COL_COUNT+1);cc.setValue((Number(cc.getValue())||0)+1);return;}
+  }
+  var tc=CONFIG.SUMMARY_COL_IG_URL+1;
+  var row=new Array(tc).fill("");
+  row[CONFIG.SUMMARY_COL_HANDLE]=handle;row[CONFIG.SUMMARY_COL_COUNT]=1;
+  row[CONFIG.SUMMARY_COL_IG_URL]="https://instagram.com/"+handle;
+  sheet.appendRow(row);
+}
+function resolveDate(raw){
+  var s=(raw||"").toString().trim();
+  if(/^\\d{4}-\\d{2}-\\d{2}$/.test(s))return s;
+  if(CONFIG.FALLBACK_DATE&&/^\\d{4}-\\d{2}-\\d{2}$/.test(CONFIG.FALLBACK_DATE))return CONFIG.FALLBACK_DATE;
+  return null;
+}
+function tds(val){
+  if(!val&&val!==0)return"";
+  if(val instanceof Date){var p=function(n){return String(n).padStart(2,"0");};return val.getFullYear()+"-"+p(val.getMonth()+1)+"-"+p(val.getDate());}
+  return String(val).trim().slice(0,10);
+}
+function inspectResponse(){
+  var ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sheets=ss.getSheets().map(function(sheet){
+    var lc=sheet.getLastColumn(),lr=sheet.getLastRow();
+    var rh=lc>0?sheet.getRange(1,1,1,lc).getValues()[0]:[];
+    var headers=rh.map(function(h){return h instanceof Date?tds(h):String(h);});
+    var preview=[];
+    if(lr>1){var n=Math.min(3,lr-1);sheet.getRange(2,1,n,lc).getValues().forEach(function(r){preview.push(r.map(function(c){return c instanceof Date?tds(c):c;}));});}
+    return{name:sheet.getName(),rows:lr,cols:lc,headers:headers,preview:preview};
+  });
+  return json({status:"ok",sheets:sheets});
+}
+function json(obj){return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);}
+function getUid(e){try{return Session.getTemporaryActiveUserKey()||"anon";}catch(_){return"anon";}}
+function isRateLimited(uid){
+  var cache=CacheService.getScriptCache(),key="rl_"+uid,now=Date.now(),rec;
+  try{rec=JSON.parse(cache.get(key)||"null");}catch(_){rec=null;}
+  if(!rec||now-rec.w>CONFIG.RATE_LIMIT_WINDOW_MS){cache.put(key,JSON.stringify({w:now,c:1}),600);return false;}
+  if(rec.c>=CONFIG.RATE_LIMIT_MAX)return true;
+  rec.c++;cache.put(key,JSON.stringify(rec),600);return false;
+}
+function writeLog(type,uid,detail){
+  try{
+    var ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var log=ss.getSheetByName(CONFIG.LOG_SHEET);
+    if(!log){log=ss.insertSheet(CONFIG.LOG_SHEET);log.appendRow(["Timestamp","Event","UID","Detail"]);log.getRange(1,1,1,4).setFontWeight("bold");}
+    var d=new Date(),p=function(n){return String(n).padStart(2,"0");};
+    var ts=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds());
+    log.appendRow([ts,type,uid,detail]);
+  }catch(_){}
+}`;
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("codeBlock").textContent = CODE_GS;
+
+  // Restore saved config
+  try {
+    const saved = JSON.parse(localStorage.getItem("qr_setup") || "{}");
+    if (saved.webAppUrl) { state.webAppUrl = saved.webAppUrl; document.getElementById("webAppUrl").value = saved.webAppUrl; }
+    if (saved.monthlySheet) state.monthlySheet = saved.monthlySheet;
+    if (saved.summarySheet)  state.summarySheet  = saved.summarySheet;
+  } catch (_) {}
+});
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+let currentStep = 1;
+function goStep(n) {
+  document.getElementById("step" + currentStep).style.display = "none";
+  currentStep = n;
+  document.getElementById("step" + n).style.display = "block";
+  updateProgress(n);
+  if (n === 3 && state.webAppUrl) loadSheets();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function updateProgress(active) {
+  for (let i = 1; i <= 4; i++) {
+    const circle = document.getElementById("sc" + i);
+    const label  = document.getElementById("sl" + i);
+    if (i < active) {
+      circle.className = "step-circle done"; circle.textContent = "✓";
+    } else if (i === active) {
+      circle.className = "step-circle active"; circle.textContent = i;
+      label.className  = "step-label active";
+    } else {
+      circle.className = "step-circle pending"; circle.textContent = i;
+      label.className  = "step-label";
+    }
+    if (i <= 3) {
+      document.getElementById("conn" + i).className =
+        "step-connector" + (i < active ? " done" : "");
+    }
+  }
+}
+
+// ── STEP 2: Test connection ───────────────────────────────────────────────────
+async function testConnection() {
+  const url = document.getElementById("webAppUrl").value.trim();
+  const statusEl = document.getElementById("connStatus");
+  if (!url) { statusEl.innerHTML = '<span class="status-badge err">⚠ Enter a URL first</span>'; return; }
+
+  statusEl.innerHTML = '<span class="spin"></span> Testing…';
+  document.getElementById("testBtn").disabled = true;
+
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.status === "ok") {
+      statusEl.innerHTML = '<span class="status-badge ok">✓ Connected — backend is running</span>';
+      state.webAppUrl = url;
+      localStorage.setItem("qr_setup", JSON.stringify({ ...state, webAppUrl: url }));
+      document.getElementById("step2Next").disabled = false;
+      document.getElementById("webAppUrl").className = "ok";
+    } else {
+      statusEl.innerHTML = '<span class="status-badge err">✗ ' + (d.message || "Unexpected response") + '</span>';
+    }
+  } catch (e) {
+    statusEl.innerHTML = '<span class="status-badge err">✗ Connection failed — check URL and access settings</span>';
+  }
+  document.getElementById("testBtn").disabled = false;
+}
+
+// ── STEP 3: Load sheets ───────────────────────────────────────────────────────
+async function loadSheets() {
+  const statusEl = document.getElementById("sheetDetectStatus");
+  statusEl.innerHTML = '<span class="spin"></span> Reading your sheet structure…';
+
+  try {
+    const res = await fetch(state.webAppUrl, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "inspect" }),
+    });
+
+    // GAS redirects POST to a googleusercontent.com echo URL
+    // The fetch follows it automatically in a browser
+    const data = await res.json();
+
+    if (!data.sheets || !data.sheets.length) {
+      statusEl.innerHTML = '<span class="status-badge err">✗ Could not read sheets. Check SPREADSHEET_ID in Code.gs.</span>';
+      return;
+    }
+
+    state.sheets = data.sheets;
+    statusEl.innerHTML = '<span class="status-badge ok">✓ Found ' + data.sheets.length + ' sheet(s)</span>';
+    renderSheetLists();
+
+  } catch (e) {
+    statusEl.innerHTML = '<span class="status-badge err">✗ ' + e.message + '</span>';
+  }
+}
+
+function renderSheetLists() {
+  const monthlyEl = document.getElementById("monthlyList");
+  const summaryEl = document.getElementById("summaryList");
+
+  const makeItem = (sheet, listEl, key) => {
+    const el = document.createElement("div");
+    el.className = "sheet-item" + (state[key] === sheet.name ? " selected" : "");
+    el.innerHTML = `
+      <div class="si-name">${sheet.name}</div>
+      <div class="si-cols">${sheet.cols} cols · ${sheet.rows} rows · Headers: ${sheet.headers.slice(0,5).filter(h=>h).join(", ")}</div>
+    `;
+    el.onclick = () => {
+      listEl.querySelectorAll(".sheet-item").forEach(e => e.classList.remove("selected"));
+      el.classList.add("selected");
+      state[key] = sheet.name;
+    };
+    listEl.appendChild(el);
+  };
+
+  monthlyEl.innerHTML = "";
+  summaryEl.innerHTML = "";
+  state.sheets.filter(s => !["Log"].includes(s.name)).forEach(sheet => {
+    makeItem(sheet, monthlyEl, "monthlySheet");
+    makeItem(sheet, summaryEl, "summarySheet");
+  });
+
+  // Auto-select first non-Log sheet for monthly, second for summary
+  const usable = state.sheets.filter(s => s.name !== "Log");
+  if (!state.monthlySheet && usable[0]) {
+    state.monthlySheet = usable[0].name;
+    monthlyEl.children[0] && monthlyEl.children[0].classList.add("selected");
+  }
+  if (!state.summarySheet && usable[1]) {
+    state.summarySheet = usable[1].name;
+    summaryEl.children[1] && summaryEl.children[1].classList.add("selected");
+  }
+}
+
+// ── STEP 4: Save ──────────────────────────────────────────────────────────────
+function finishSetup() {
+  state.summaryStartRow = parseInt(document.getElementById("summaryStartRow").value) || 3;
+
+  if (!state.monthlySheet || !state.summarySheet) {
+    alert("Please select both a monthly sheet and a summary sheet.");
+    return;
+  }
+
+  // Save to admin config so admin.html picks it up
+  const adminCfg = JSON.parse(localStorage.getItem("qr_admin_cfg") || "{}");
+  adminCfg.backendURL = state.webAppUrl;
+  adminCfg.pageURL    = state.pageUrl;
+  localStorage.setItem("qr_admin_cfg", JSON.stringify(adminCfg));
+  localStorage.setItem("qr_setup", JSON.stringify(state));
+
+  document.getElementById("configSummary").innerHTML =
+    "<strong>Monthly sheet:</strong> " + state.monthlySheet +
+    "<br><strong>Summary sheet:</strong> " + state.summarySheet +
+    "<br><strong>Backend:</strong> " + state.webAppUrl.slice(0, 50) + "…";
+
+  goStep(4);
+}
+
+function goAdmin() { window.location.href = "admin.html"; }
+
+function copyCode() {
+  navigator.clipboard.writeText(CODE_GS).then(() => {
+    const btn = document.querySelector(".copy-btn");
+    btn.textContent = "Copied ✓";
+    setTimeout(() => btn.textContent = "Copy", 2000);
+  });
+}
+</script>
+</body>
+</html>

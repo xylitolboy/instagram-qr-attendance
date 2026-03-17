@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Instagram QR — Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --purple: #833AB4; --pink: #E1306C; --orange: #F77737;
+      --grad: linear-gradient(90deg, var(--purple), var(--pink), var(--orange));
+      --r: 14px;
+    }
+    body {
+      min-height: 100dvh;
+      background: linear-gradient(135deg,#f5f0ff 0%,#fff0f5 50%,#fff5ee 100%);
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      padding: 28px 16px 60px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+    }
+
+    /* ── Header ── */
+    .hdr { text-align: center; }
+    .hdr h1 {
+      font-size: 1.6rem; font-weight: 800;
+      background: var(--grad); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hdr p { font-size: .85rem; color: #999; margin-top: 4px; }
+
+    /* ── Tab bar ── */
+    .tabs {
+      display: flex; gap: 8px;
+      background: #fff; border-radius: 40px;
+      padding: 5px; box-shadow: 0 2px 12px rgba(131,58,180,.1);
+      width: 100%; max-width: 480px;
+    }
+    .tab {
+      flex: 1; text-align: center; padding: 9px 0;
+      border-radius: 30px; cursor: pointer;
+      font-size: .85rem; font-weight: 600; color: #aaa;
+      transition: .2s;
+    }
+    .tab.active {
+      background: var(--grad); color: #fff;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #fff; border-radius: 20px; padding: 24px 22px;
+      width: 100%; max-width: 480px;
+      box-shadow: 0 6px 32px rgba(131,58,180,.1);
+    }
+    .card h2 {
+      font-size: 1rem; font-weight: 700; color: #1a1a1a;
+      margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+    }
+    .badge {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--grad); color: #fff;
+      font-size: .72rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    /* ── Fields ── */
+    .field { margin-bottom: 14px; }
+    label { display: block; font-size: .78rem; font-weight: 600; color: #666; margin-bottom: 5px; }
+    input[type="text"], input[type="url"], input[type="number"], input[type="date"], select {
+      width: 100%; padding: 11px 13px; font-size: .95rem;
+      border: 2px solid #e8e0f0; border-radius: var(--r); outline: none;
+      color: #1a1a1a; background: #fafafa; -webkit-appearance: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus {
+      border-color: var(--purple); background: #fff;
+      box-shadow: 0 0 0 4px rgba(131,58,180,.08);
+    }
+    .row { display: flex; gap: 10px; }
+    .row .field { flex: 1; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%; padding: 13px; font-size: .95rem; font-weight: 700; color: #fff;
+      background: var(--grad); background-size: 200% auto;
+      border: none; border-radius: var(--r); cursor: pointer;
+      transition: opacity .2s, transform .15s;
+    }
+    .btn:hover { opacity: .9; }
+    .btn:active { transform: scale(.97); }
+    .btn.outline {
+      background: none; border: 2px solid var(--purple); color: var(--purple);
+    }
+    .btn.sm { padding: 9px 18px; width: auto; font-size: .85rem; border-radius: 30px; }
+
+    /* ── URL preview box ── */
+    .url-preview {
+      background: #f7f3ff; border: 1.5px solid #d9c9f0;
+      border-radius: var(--r); padding: 11px 13px;
+      font-size: .8rem; color: #444; word-break: break-all;
+      margin-bottom: 14px; display: none;
+    }
+    .url-preview strong { display: block; font-size: .72rem; color: var(--purple); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── QR output ── */
+    .qr-wrap {
+      display: none; flex-direction: column; align-items: center; gap: 14px; padding-top: 6px;
+    }
+    #qrCanvas { border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+    .qr-info { text-align: center; }
+    .qr-info .ql { font-size: 1rem; font-weight: 800; color: #1a1a1a; }
+    .qr-info .qs { font-size: .8rem; color: #aaa; margin-top: 2px; }
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 24px; border-radius: 30px; color: #fff; font-weight: 700;
+      font-size: .88rem; text-decoration: none; cursor: pointer;
+      background: var(--grad); border: none; transition: opacity .2s;
+    }
+    .dl-btn:hover { opacity: .88; }
+
+    hr.divider { border: none; border-top: 1.5px solid #f0e8ff; margin: 18px 0; }
+
+    /* ── Status banner ── */
+    .status-bar {
+      width: 100%; max-width: 480px; border-radius: 16px; padding: 14px 18px;
+      background: #fff; box-shadow: 0 4px 20px rgba(131,58,180,.08);
+      display: none; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .status-bar .sb-label { font-size: .72rem; color: #aaa; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .status-bar .sb-value { font-size: .98rem; font-weight: 700; color: #1a1a1a; margin-top: 2px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.2); flex-shrink: 0; }
+
+    /* ── Settings panel ── */
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .pill {
+      padding: 6px 14px; border-radius: 20px; font-size: .8rem; font-weight: 600;
+      border: 2px solid #e8e0f0; color: #888; cursor: pointer; transition: .15s;
+    }
+    .pill.active { border-color: var(--purple); color: var(--purple); background: rgba(131,58,180,.07); }
+
+    /* ── History list ── */
+    .history-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .history-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fafafa; border: 1.5px solid #f0e8ff; border-radius: var(--r);
+      padding: 10px 14px; gap: 10px;
+    }
+    .hi-info .hi-name { font-size: .9rem; font-weight: 700; color: #1a1a1a; }
+    .hi-info .hi-date { font-size: .75rem; color: #aaa; margin-top: 2px; }
+    .hi-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: #1a1a1a; color: #fff; padding: 10px 22px; border-radius: 30px;
+      font-size: .85rem; font-weight: 600; opacity: 0;
+      transition: transform .3s, opacity .3s; pointer-events: none; z-index: 999; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* ── Panels ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Responsive ── */
+    @media (min-width: 520px) {
+      body { padding: 40px 24px 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>QR Attendance Admin</h1>
+  <p id="hdrSub">Instagram Check-in Manager</p>
+</div>
+
+<!-- Active session banner -->
+<div class="status-bar" id="statusBar">
+  <div>
+    <div class="sb-label">Active Session</div>
+    <div class="sb-value" id="sbValue">—</div>
+  </div>
+  <div class="dot"></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('generate')">Generate QR</div>
+  <div class="tab" onclick="switchTab('history')">History</div>
+  <div class="tab" onclick="switchTab('settings')">Settings</div>
+</div>
+
+<!-- ── TAB: Generate ── -->
+<div class="panel active" id="tab-generate">
+
+  <div class="card">
+    <h2><span class="badge">1</span> Session info</h2>
+    <div class="row">
+      <div class="field">
+        <label for="sessionNum">Session #</label>
+        <input type="number" id="sessionNum" placeholder="30" min="1"/>
+      </div>
+      <div class="field">
+        <label for="sessionDate">Date</label>
+        <input type="date" id="sessionDate"/>
+      </div>
+    </div>
+    <div class="field">
+      <label for="eventLabel">Event / Group name (optional)</label>
+      <input type="text" id="eventLabel" placeholder="e.g. WAUSAN30"/>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="badge">2</span> QR target URL preview</h2>
+    <div class="url-preview" id="urlPreview">
+      <strong>QR will open</strong>
+      <span id="urlText"></span>
+    </div>
+    <button class="btn" onclick="generateQR()">Generate QR Code</button>
+  </div>
+
+  <!-- QR Output -->
+  <div class="card" id="qrCard" style="display:none">
+    <h2><span class="badge">3</span> Your QR code</h2>
+    <div class="qr-wrap" id="qrWrap">
+      <canvas id="qrCanvas"></canvas>
+      <div class="qr-info">
+        <div class="ql" id="qrLabel"></div>
+        <div class="qs" id="qrSub"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+        <a id="dlBtn" class="dl-btn" download="qr.png">↓ Download PNG</a>
+        <button class="dl-btn" onclick="copyURL()" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">⧉ Copy URL</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── TAB: History ── -->
+<div class="panel" id="tab-history">
+  <div class="card">
+    <h2>Session history</h2>
+    <ul class="history-list" id="historyList">
+      <li style="color:#aaa;font-size:.85rem;text-align:center;padding:12px 0">No sessions yet.</li>
+    </ul>
+    <hr class="divider"/>
+    <button class="btn outline" onclick="clearHistory()">Clear history</button>
+  </div>
+</div>
+
+<!-- ── TAB: Settings ── -->
+<div class="panel" id="tab-settings">
+  <div class="card">
+    <h2>Backend & page URL</h2>
+
+    <div class="field">
+      <label for="backendURL">Google Apps Script Web App URL</label>
+      <input type="url" id="backendURL" placeholder="https://script.google.com/macros/s/.../exec"/>
+    </div>
+
+    <div class="field">
+      <label for="pageURL">Landing page URL (instagram.html)</label>
+      <input type="url" id="pageURL" placeholder="https://yoursite.com/instagram.html"/>
+    </div>
+
+    <div class="field">
+      <label>QR size</label>
+      <div class="pill-row" id="sizePills">
+        <div class="pill" data-val="256" onclick="setPillVal('size',this)">Small</div>
+        <div class="pill active" data-val="320" onclick="setPillVal('size',this)">Medium</div>
+        <div class="pill" data-val="480" onclick="setPillVal('size',this)">Large</div>
+        <div class="pill" data-val="640" onclick="setPillVal('size',this)">XL</div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="saveSettings()">Save settings</button>
+
+    <hr class="divider"/>
+    <div class="field">
+      <label>Test backend connection</label>
+      <button class="btn sm outline" onclick="testBackend()">Ping backend →</button>
+      <p id="pingResult" style="font-size:.8rem;margin-top:8px;color:#888"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+let CFG = {
+  backendURL: "",
+  pageURL:    "",
+  qrSize:     320,
+  history:    [],   // [{num, date, event, url, ts}]
+};
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  loadCFG();
+  applySettings();
+
+  // Default date = today
+  const today = new Date();
+  const pad   = n => String(n).padStart(2, "0");
+  document.getElementById("sessionDate").value =
+    today.getFullYear() + "-" + pad(today.getMonth()+1) + "-" + pad(today.getDate());
+
+  // Restore last session #
+  const lastNum = CFG.history[0] && CFG.history[0].num ? Number(CFG.history[0].num) + 1 : "";
+  if (lastNum) document.getElementById("sessionNum").value = lastNum;
+
+  // Live URL preview
+  ["sessionNum","sessionDate","eventLabel"].forEach(id =>
+    document.getElementById(id).addEventListener("input", updatePreview)
+  );
+  updatePreview();
+  renderHistory();
+});
+
+// ── PERSISTENCE ──────────────────────────────────────────────────────────────
+function loadCFG() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("qr_admin_cfg") || "{}");
+    Object.assign(CFG, saved);
+  } catch (_) {}
+}
+function saveCFG() {
+  localStorage.setItem("qr_admin_cfg", JSON.stringify(CFG));
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach((el,i) => {
+    const names = ["generate","history","settings"];
+    el.classList.toggle("active", names[i] === name);
+  });
+  document.querySelectorAll(".panel").forEach(el => el.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  if (name === "history") renderHistory();
+}
+
+// ── URL BUILDER ──────────────────────────────────────────────────────────────
+function buildURL() {
+  const base  = (CFG.pageURL || "").trim();
+  const date  = (document.getElementById("sessionDate").value || "").trim();
+  const num   = (document.getElementById("sessionNum").value || "").trim();
+  const event = (document.getElementById("eventLabel").value || "").trim();
+  if (!base || !date) return null;
+  try {
+    const url = new URL(base);
+    url.searchParams.set("date", date);
+    if (num)              url.searchParams.set("session", num);
+    if (event)            url.searchParams.set("event",   event);
+    if (CFG.backendURL)   url.searchParams.set("backend", CFG.backendURL);
+    return url.toString();
+  } catch (_) { return null; }
+}
+
+function updatePreview() {
+  const url = buildURL();
+  const box = document.getElementById("urlPreview");
+  if (url) {
+    document.getElementById("urlText").textContent = url;
+    box.style.display = "block";
+  } else {
+    box.style.display = "none";
+  }
+}
+
+// ── GENERATE QR ──────────────────────────────────────────────────────────────
+function generateQR() {
+  const num   = (document.getElementById("sessionNum").value || "").trim();
+  const date  = (document.getElementById("sessionDate").value || "").trim();
+  const event = (document.getElementById("eventLabel").value || "").trim();
+  const url   = buildURL();
+
+  if (!CFG.pageURL) { toast("⚠ Set the landing page URL in Settings first."); switchTab("settings"); return; }
+  if (!date)        { toast("⚠ Please enter a session date."); return; }
+  if (!url)         { toast("⚠ Could not build URL — check settings."); return; }
+
+  const canvas = document.getElementById("qrCanvas");
+  const size   = CFG.qrSize || 320;
+
+  if (typeof QRCode !== "undefined") {
+    QRCode.toCanvas(canvas, url, { width: size, margin: 2, color: { dark:"#1a1a1a", light:"#ffffff" } }, err => {
+      if (err) { fallbackQR(url, canvas, size); return; }
+      document.getElementById("dlBtn").href = canvas.toDataURL("image/png");
+    });
+  } else {
+    fallbackQR(url, canvas, size);
+  }
+
+  // Labels
+  document.getElementById("qrLabel").textContent = num ? (event || "Session") + " #" + num : (event || date);
+  document.getElementById("qrSub").textContent   = num ? date : "";
+  document.getElementById("dlBtn").download = "qr_" + (num ? "session" + num : date) + ".png";
+
+  // Active session banner
+  const label = [num && ("Session #" + num), date].filter(Boolean).join("  ·  ");
+  document.getElementById("sbValue").textContent = label;
+  const bar = document.getElementById("statusBar");
+  bar.style.display = "flex";
+
+  // Show QR card
+  document.getElementById("qrCard").style.display = "block";
+  document.getElementById("qrWrap").style.display = "flex";
+  document.getElementById("qrCard").scrollIntoView({ behavior:"smooth", block:"center" });
+
+  // Save to history
+  CFG.history.unshift({ num, date, event, url, ts: Date.now() });
+  if (CFG.history.length > 20) CFG.history = CFG.history.slice(0, 20);
+  saveCFG();
+}
+
+function fallbackQR(text, canvas, size) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.src = "https://chart.googleapis.com/chart?cht=qr&chs=" + size + "x" + size +
+            "&chl=" + encodeURIComponent(text) + "&choe=UTF-8";
+  img.onload = () => {
+    canvas.width = size; canvas.height = size;
+    canvas.getContext("2d").drawImage(img, 0, 0, size, size);
+    document.getElementById("dlBtn").href = canvas.toDataURL("image/png");
+  };
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const list = document.getElementById("historyList");
+  if (!CFG.history.length) {
+    list.innerHTML = '<li style="color:#aaa;font-size:.85rem;text-align:center;padding:12px 0">No sessions yet.</li>';
+    return;
+  }
+  list.innerHTML = CFG.history.map((h, i) => `
+    <li class="history-item">
+      <div class="hi-info">
+        <div class="hi-name">${h.num ? (h.event || "Session") + " #" + h.num : (h.event || "Session")}${h.date ? "  ·  " + h.date : ""}</div>
+        <div class="hi-date">${new Date(h.ts).toLocaleString()}</div>
+      </div>
+      <div class="hi-actions">
+        <button class="dl-btn" style="padding:6px 12px;font-size:.75rem" onclick="reloadSession(${i})">QR</button>
+        <button class="dl-btn" style="padding:6px 12px;font-size:.75rem;background:linear-gradient(135deg,#6366f1,#8b5cf6)" onclick="copyHistoryURL(${i})">Copy</button>
+      </div>
+    </li>
+  `).join("");
+}
+
+function reloadSession(i) {
+  const h = CFG.history[i];
+  if (!h) return;
+  if (h.num)   document.getElementById("sessionNum").value  = h.num;
+  if (h.date)  document.getElementById("sessionDate").value = h.date;
+  if (h.event) document.getElementById("eventLabel").value  = h.event;
+  switchTab("generate");
+  updatePreview();
+  setTimeout(generateQR, 100);
+}
+
+function copyHistoryURL(i) {
+  const h = CFG.history[i];
+  if (!h) return;
+  navigator.clipboard.writeText(h.url).then(() => toast("URL copied!")).catch(() => toast("Copy failed"));
+}
+
+function clearHistory() {
+  if (!confirm("Clear all session history?")) return;
+  CFG.history = [];
+  saveCFG();
+  renderHistory();
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+function applySettings() {
+  document.getElementById("backendURL").value = CFG.backendURL || "";
+  document.getElementById("pageURL").value    = CFG.pageURL    || "";
+
+  document.querySelectorAll("#sizePills .pill").forEach(el => {
+    el.classList.toggle("active", Number(el.dataset.val) === CFG.qrSize);
+  });
+  updatePreview();
+}
+
+function setPillVal(key, el) {
+  el.closest(".pill-row").querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+  el.classList.add("active");
+}
+
+function saveSettings() {
+  CFG.backendURL = document.getElementById("backendURL").value.trim();
+  CFG.pageURL    = document.getElementById("pageURL").value.trim();
+  const activeSz = document.querySelector("#sizePills .pill.active");
+  CFG.qrSize     = activeSz ? Number(activeSz.dataset.val) : 320;
+  saveCFG();
+  updatePreview();
+  toast("Settings saved ✓");
+}
+
+async function testBackend() {
+  const url = document.getElementById("backendURL").value.trim();
+  const res = document.getElementById("pingResult");
+  if (!url) { res.textContent = "No backend URL entered."; return; }
+  res.textContent = "Pinging…";
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.status === "ok") {
+      res.style.color = "#16a34a";
+      res.textContent = "✓ Connected — " + (d.message || "OK");
+    } else {
+      res.style.color = "#dc2626";
+      res.textContent = "✗ " + (d.message || "Unexpected response");
+    }
+  } catch (e) {
+    res.style.color = "#dc2626";
+    res.textContent = "✗ Connection failed: " + e.message;
+  }
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function copyURL() {
+  const url = buildURL();
+  if (!url) { toast("No URL to copy — fill in the fields first."); return; }
+  navigator.clipboard.writeText(url).then(() => toast("URL copied!")).catch(() => toast("Copy failed"));
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2500);
+}
+</script>
+</body>
+</html>

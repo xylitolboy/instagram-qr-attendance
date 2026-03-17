@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Instagram Check-in</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #833AB4;
+      --pink:   #E1306C;
+      --orange: #F77737;
+      --r: 14px;
+    }
+
+    body {
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f5f0ff 0%, #fff0f5 50%, #fff5ee 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 24px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 28px 36px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 40px rgba(131,58,180,.12);
+    }
+
+    /* Logo */
+    .logo { display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .logo svg { width: 48px; height: 48px; }
+
+    /* Event name */
+    .event-name {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--purple);
+      background: rgba(131,58,180,.07);
+      border-radius: 20px;
+      padding: 4px 14px;
+      display: none;
+      margin: 0 auto 10px;
+      width: fit-content;
+    }
+
+    h1 { text-align: center; font-size: 1.3rem; font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
+
+    .session-badge {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 28px;
+      min-height: 18px;
+    }
+
+    /* Input */
+    .input-wrap { position: relative; margin-bottom: 10px; }
+    .at { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.05rem; font-weight: 600; color: var(--purple); pointer-events: none; }
+    input[type="text"] {
+      width: 100%;
+      padding: 15px 15px 15px 30px;
+      font-size: 1rem;
+      border: 2px solid #e8e0f0;
+      border-radius: var(--r);
+      outline: none;
+      color: #1a1a1a;
+      background: #fafafa;
+      transition: border-color .2s, box-shadow .2s;
+      -webkit-appearance: none;
+    }
+    input:focus { border-color: var(--purple); background: #fff; box-shadow: 0 0 0 4px rgba(131,58,180,.08); }
+    input.err   { border-color: var(--pink);   box-shadow: 0 0 0 4px rgba(225,48,108,.08); }
+
+    .errmsg { font-size: .8rem; color: var(--pink); min-height: 20px; padding-left: 4px; margin-bottom: 14px; }
+
+    /* Button */
+    button {
+      width: 100%; padding: 15px;
+      font-size: 1rem; font-weight: 700; color: #fff;
+      background: linear-gradient(90deg, var(--purple), var(--pink), var(--orange));
+      background-size: 200% auto;
+      border: none; border-radius: var(--r); cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active:not(:disabled) { transform: scale(.97); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-inner { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .spinner { display: none; width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Success */
+    .success { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 8px 0; animation: up .4s ease; }
+    @keyframes up { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    .check { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg,var(--purple),var(--pink)); display: flex; align-items: center; justify-content: center; }
+    .check svg { width: 30px; height: 30px; stroke: #fff; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+    .success h2 { font-size: 1.2rem; font-weight: 800; color: #1a1a1a; }
+    .success .handle { font-size: 1rem; font-weight: 600; color: var(--purple); }
+    .success .note { font-size: .82rem; color: #aaa; text-align: center; line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <div class="logo">
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ig" x1="0" y1="48" x2="48" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="#F77737"/>
+          <stop offset="40%"  stop-color="#E1306C"/>
+          <stop offset="100%" stop-color="#833AB4"/>
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="44" height="44" rx="12" stroke="url(#ig)" stroke-width="3.5"/>
+      <circle cx="24" cy="24" r="9" stroke="url(#ig)" stroke-width="3.5"/>
+      <circle cx="35.5" cy="12.5" r="2.5" fill="url(#ig)"/>
+    </svg>
+  </div>
+
+  <div class="event-name" id="eventName"></div>
+  <h1>Enter your Instagram ID</h1>
+  <div class="session-badge" id="sessionBadge"></div>
+
+  <!-- Form -->
+  <div id="formSection">
+    <div class="input-wrap">
+      <span class="at">@</span>
+      <input type="text" id="igInput"
+        placeholder="your_username"
+        autocomplete="off" autocorrect="off"
+        autocapitalize="none" spellcheck="false"
+        inputmode="text" maxlength="31" />
+    </div>
+    <p class="errmsg" id="errMsg"></p>
+
+    <button id="submitBtn" onclick="submit()">
+      <span class="btn-inner">
+        <span class="spinner" id="spinner"></span>
+        <span id="btnLabel">Submit</span>
+      </span>
+    </button>
+  </div>
+
+  <!-- Success -->
+  <div class="success" id="successBox">
+    <div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <h2>You're in!</h2>
+    <p class="handle" id="successHandle"></p>
+    <p class="note">Your Instagram ID has been saved.<br>See you at the event!</p>
+  </div>
+
+</div>
+
+<script>
+  // ── Read URL params ──────────────────────────────────────────────────────────
+  const p           = new URLSearchParams(window.location.search);
+  const BACKEND_URL = (p.get("backend") || localStorage.getItem("ig_backend") || "").trim();
+  const SESSION_DATE = (p.get("date")    || "").trim();
+  const SESSION_NUM  = (p.get("session") || "").trim();
+  const EVENT_NAME   = (p.get("event")   || localStorage.getItem("ig_event") || "").trim();
+
+  // Persist backend URL if supplied
+  if (p.get("backend")) localStorage.setItem("ig_backend", p.get("backend"));
+  if (p.get("event"))   localStorage.setItem("ig_event",   p.get("event"));
+
+  // ── UI init ──────────────────────────────────────────────────────────────────
+  if (EVENT_NAME) {
+    const el = document.getElementById("eventName");
+    el.textContent = EVENT_NAME;
+    el.style.display = "block";
+  }
+  if (SESSION_DATE) {
+    document.getElementById("sessionBadge").textContent = SESSION_NUM
+      ? "Session #" + SESSION_NUM + "  ·  " + SESSION_DATE
+      : SESSION_DATE;
+  }
+
+  if (!BACKEND_URL) {
+    document.getElementById("errMsg").textContent =
+      "Configuration error: no backend URL. Please use the admin QR link.";
+    document.getElementById("submitBtn").disabled = true;
+  }
+
+  // ── Input handlers ───────────────────────────────────────────────────────────
+  const input = document.getElementById("igInput");
+  input.addEventListener("input", () => {
+    if (input.value.startsWith("@")) input.value = input.value.slice(1);
+    setErr(""); input.classList.remove("err");
+  });
+  input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+
+  function setErr(msg) { document.getElementById("errMsg").textContent = msg; }
+
+  function validate(raw) {
+    const v = raw.replace(/^@+/, "").trim();
+    if (!v)         return { ok: false, msg: "Please enter your Instagram username." };
+    if (v.length < 3)  return { ok: false, msg: "Username must be at least 3 characters." };
+    if (v.length > 30) return { ok: false, msg: "Username must be 30 characters or fewer." };
+    if (!/^[a-zA-Z0-9._]+$/.test(v))
+      return { ok: false, msg: "Only letters, numbers, underscores, and periods allowed." };
+    return { ok: true, value: v };
+  }
+
+  function setLoading(on) {
+    document.getElementById("submitBtn").disabled      = on;
+    document.getElementById("spinner").style.display   = on ? "block" : "none";
+    document.getElementById("btnLabel").textContent    = on ? "Submitting…" : "Submit";
+  }
+
+  async function submit() {
+    if (!BACKEND_URL) return;
+    const r = validate(input.value);
+    if (!r.ok) { setErr(r.msg); input.classList.add("err"); input.focus(); return; }
+
+    setLoading(true);
+    try {
+      const res  = await fetch(BACKEND_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ instagram: r.value, date: SESSION_DATE, session: SESSION_NUM }),
+      });
+      const data = await res.json();
+
+      if (data.status === "success" || data.status === "duplicate") {
+        document.getElementById("formSection").style.display = "none";
+        const box = document.getElementById("successBox");
+        box.style.display = "flex";
+        document.getElementById("successHandle").textContent =
+          data.status === "duplicate" ? "@" + r.value + " (already registered)" : "@" + r.value;
+      } else {
+        setErr(data.message || "Something went wrong. Please try again.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setErr("Network error. Please check your connection.");
+      setLoading(false);
+    }
+  }
+</script>
+</body>
+</html>
