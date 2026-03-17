@@ -415,6 +415,32 @@
       document.getElementById("btnLabel").textContent  = on ? "SUBMITTING..." : "CHECK IN";
     }
 
+    // JSONP helper — works cross-origin with Google Apps Script
+    let _cbIdx = 0;
+    function jsonpGet(url, params) {
+      return new Promise((resolve, reject) => {
+        const cbName = "__gasCb" + (++_cbIdx);
+        const timer  = setTimeout(() => {
+          delete window[cbName]; script.remove();
+          reject(new Error("Request timed out."));
+        }, 15000);
+        window[cbName] = (data) => {
+          clearTimeout(timer); delete window[cbName]; script.remove();
+          resolve(data);
+        };
+        const u = new URL(url);
+        Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== "") u.searchParams.set(k, v); });
+        u.searchParams.set("callback", cbName);
+        const script = document.createElement("script");
+        script.src = u.toString();
+        script.onerror = () => {
+          clearTimeout(timer); delete window[cbName];
+          reject(new Error("Network error. Check your connection."));
+        };
+        document.head.appendChild(script);
+      });
+    }
+
     async function submit() {
       if (!BACKEND_URL) return;
       const r = validate(input.value);
@@ -422,13 +448,12 @@
 
       setLoading(true);
       try {
-        // Use text/plain to avoid CORS preflight — GAS still parses the JSON body
-        const res  = await fetch(BACKEND_URL, {
-          method:  "POST",
-          headers: { "Content-Type": "text/plain;charset=UTF-8" },
-          body:    JSON.stringify({ instagram: r.value, date: SESSION_DATE, session: SESSION_NUM }),
+        const data = await jsonpGet(BACKEND_URL, {
+          action:    "submit",
+          instagram: r.value,
+          date:      SESSION_DATE,
+          session:   SESSION_NUM,
         });
-        const data = await res.json();
 
         if (data.status === "success" || data.status === "duplicate") {
           document.getElementById("formSection").style.display = "none";
@@ -443,7 +468,7 @@
           setLoading(false);
         }
       } catch (err) {
-        setErr("Network error. Check your connection.");
+        setErr(err.message || "Network error. Check your connection.");
         setLoading(false);
       }
     }
