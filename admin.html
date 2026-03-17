@@ -401,6 +401,10 @@ let CFG = { backendURL:"", pageURL:"", qrSize:320, history:[] };
 // ── INIT ───────────────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
   try { Object.assign(CFG, JSON.parse(localStorage.getItem("qr_admin_cfg") || "{}")); } catch(_){}
+  // Default page URL to sibling instagram.html if not configured yet
+  if (!CFG.pageURL) {
+    CFG.pageURL = window.location.origin + window.location.pathname.replace(/admin\.html.*$/, "instagram.html");
+  }
   applySettings();
 
   const today = new Date(), pad = n => String(n).padStart(2,"0");
@@ -466,12 +470,20 @@ function generateQR() {
   const canvas = document.getElementById("qrCanvas");
   const size   = CFG.qrSize || 320;
 
+  // Always set canvas dimensions upfront (avoids 0×0 when parent is hidden)
+  canvas.width  = size;
+  canvas.height = size;
+
+  // Show the card first so canvas has a layout context
+  document.getElementById("qrCard").style.display = "block";
+  document.getElementById("qrWrap").style.display  = "flex";
+
   if (typeof QRCode !== "undefined") {
     QRCode.toCanvas(canvas, url, {
       width: size, margin: 2,
       color: { dark: "#F9F9F9", light: "#1C1C1C" }  // inverted: white modules on dark bg
     }, err => {
-      if (err) { fallbackQR(url, canvas, size); return; }
+      if (err) { console.error("QRCode.toCanvas:", err); fallbackQR(url, canvas, size); return; }
       document.getElementById("dlBtn").href = canvas.toDataURL("image/png");
     });
   } else { fallbackQR(url, canvas, size); }
@@ -486,8 +498,6 @@ function generateQR() {
   document.getElementById("activeSession").style.display = "flex";
   document.getElementById("navSession").textContent = label;
 
-  document.getElementById("qrCard").style.display = "block";
-  document.getElementById("qrWrap").style.display  = "flex";
   document.getElementById("qrCard").scrollIntoView({ behavior:"smooth", block:"center" });
 
   CFG.history.unshift({ num, date, event, url, ts: Date.now() });
@@ -496,13 +506,24 @@ function generateQR() {
 }
 
 function fallbackQR(text, canvas, size) {
+  canvas.width  = size;
+  canvas.height = size;
   const img = new Image(); img.crossOrigin = "anonymous";
   img.src = "https://chart.googleapis.com/chart?cht=qr&chs="+size+"x"+size
            +"&chl="+encodeURIComponent(text)+"&choe=UTF-8";
   img.onload = () => {
-    canvas.width = size; canvas.height = size;
     canvas.getContext("2d").drawImage(img,0,0,size,size);
     document.getElementById("dlBtn").href = canvas.toDataURL("image/png");
+  };
+  img.onerror = () => {
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#1C1C1C";
+    ctx.fillRect(0,0,size,size);
+    ctx.fillStyle = "#CAB895";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("QR load failed — check internet", size/2, size/2 - 8);
+    ctx.fillText("or install the page on HTTPS", size/2, size/2 + 12);
   };
 }
 
