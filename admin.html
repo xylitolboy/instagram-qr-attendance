@@ -339,7 +339,7 @@
         <div class="qr-sub" id="qrSub"></div>
       </div>
       <div class="btn-row">
-        <a id="dlBtn" class="dl-btn" download="qr.png">↓ DOWNLOAD PNG</a>
+        <a id="dlBtn" class="dl-btn" href="#">↓ DOWNLOAD PNG</a>
         <button class="dl-btn copy" onclick="copyURL()">⧉ COPY URL</button>
       </div>
     </div>
@@ -478,19 +478,20 @@ function generateQR() {
   document.getElementById("qrCard").style.display = "block";
   document.getElementById("qrWrap").style.display  = "flex";
 
+  const dlFilename = "qr_"+(num?"session"+num:date)+".png";
+
   if (typeof QRCode !== "undefined") {
     QRCode.toCanvas(canvas, url, {
       width: size, margin: 2,
       color: { dark: "#F9F9F9", light: "#1C1C1C" }  // inverted: white modules on dark bg
     }, err => {
-      if (err) { console.error("QRCode.toCanvas:", err); fallbackQR(url, canvas, size); return; }
-      document.getElementById("dlBtn").href = canvas.toDataURL("image/png");
+      if (err) { console.error("QRCode.toCanvas:", err); fallbackQR(url, canvas, size, dlFilename); return; }
+      bindDownload(canvas, dlFilename);
     });
-  } else { fallbackQR(url, canvas, size); }
+  } else { fallbackQR(url, canvas, size, dlFilename); }
 
   document.getElementById("qrLabel").textContent = num ? (event||"SESSION")+" #"+num : (event||date);
   document.getElementById("qrSub").textContent   = num ? date : "";
-  document.getElementById("dlBtn").download       = "qr_"+(num?"session"+num:date)+".png";
 
   // Active session
   const label = [num&&("SESSION #"+num), date].filter(Boolean).join("  ·  ");
@@ -505,7 +506,7 @@ function generateQR() {
   saveCFG();
 }
 
-function fallbackQR(text, canvas, size) {
+function fallbackQR(text, canvas, size, filename) {
   canvas.width  = size;
   canvas.height = size;
   const img = new Image(); img.crossOrigin = "anonymous";
@@ -513,7 +514,7 @@ function fallbackQR(text, canvas, size) {
            +"&chl="+encodeURIComponent(text)+"&choe=UTF-8";
   img.onload = () => {
     canvas.getContext("2d").drawImage(img,0,0,size,size);
-    document.getElementById("dlBtn").href = canvas.toDataURL("image/png");
+    bindDownload(canvas, filename);
   };
   img.onerror = () => {
     const ctx = canvas.getContext("2d");
@@ -524,6 +525,28 @@ function fallbackQR(text, canvas, size) {
     ctx.textAlign = "center";
     ctx.fillText("QR load failed — check internet", size/2, size/2 - 8);
     ctx.fillText("or install the page on HTTPS", size/2, size/2 + 12);
+  };
+}
+
+// Convert canvas to a Blob URL and wire up the download button.
+// Blob URLs work on all browsers including Safari/iOS (data URLs don't download there).
+function bindDownload(canvas, filename) {
+  const btn = document.getElementById("dlBtn");
+  // Remove old onclick if any
+  btn.onclick = null;
+  btn.onclick = (e) => {
+    e.preventDefault();
+    canvas.toBlob(blob => {
+      if (!blob) { toast("COULD NOT CREATE IMAGE"); return; }
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement("a");
+      a.href     = url;
+      a.download = filename || "qr.png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }, "image/png");
   };
 }
 
