@@ -118,7 +118,7 @@ dist/
 git init
 git add .
 git commit -m "Initial deploy"
-git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
+git remote add origin https://github.com/xylitolboy/instagram-qr-attendance.git
 git push -u origin main
 
 # 3. Enable GitHub Pages
