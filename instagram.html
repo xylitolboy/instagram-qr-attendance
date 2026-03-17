@@ -422,9 +422,10 @@
 
       setLoading(true);
       try {
+        // Use text/plain to avoid CORS preflight — GAS still parses the JSON body
         const res  = await fetch(BACKEND_URL, {
           method:  "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
           body:    JSON.stringify({ instagram: r.value, date: SESSION_DATE, session: SESSION_NUM }),
         });
         const data = await res.json();
